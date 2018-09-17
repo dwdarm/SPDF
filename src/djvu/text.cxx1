@@ -1,0 +1,34 @@
+#include "DJVUDocument.h"
+#include <iostream>
+
+int main ()
+{
+	spdf::Document *doc = NULL;
+	spdf::DocumentPage *page = NULL;
+	spdf::Image *image = NULL;
+	std::string filename;
+	std::string type;
+	
+	filename = "sample.djvu";
+	type = std::string (filename, filename.size ()-4, 4);
+	std::cout << type << "\n";
+	std::cout << "opening document...\n";
+	doc = spdf::DJVUDocument::openDocument (filename);
+	if (!doc) {
+		std::cout << "Cannot open document!!!\n";
+		return 0;
+	}
+	
+	std::cout << "document opened!!!\n";
+	std::cout << "Number of pages = " << doc->getPages () << "\n";
+	
+	std::cout << "creating page...\n";
+	page = doc->createPage (0);
+	std::cout << "width = " << page->getWidth () << "\n";
+	std::cout << "height = " << page->getHeight () << "\n";
+	
+	std::cout << "creating image...\n";
+	image = page->render (1.0);
+	
+	return 0;
+}

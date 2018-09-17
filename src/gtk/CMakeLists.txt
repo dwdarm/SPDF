@@ -1,0 +1,5 @@
+file(GLOB SOURCES "*.cxx")
+add_library(gtk ${SOURCES})
+target_include_directories(gtk PUBLIC ${GTKMM_INCLUDE_DIRS})
+target_compile_options(gtk PUBLIC ${GTKMM_CFLAGS_OTHER})
+target_link_libraries(gtk ${GTKMM_LIBRARIES})

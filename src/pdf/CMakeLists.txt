@@ -1,0 +1,5 @@
+file(GLOB SOURCES "*.cxx")
+add_library(pdf ${SOURCES})
+target_include_directories(pdf PUBLIC ${POPPLER_INCLUDE_DIRS})
+target_compile_options(pdf PUBLIC ${POPPLER_CFLAGS_OTHER})
+target_link_libraries(pdf ${POPPLER_LIBRARIES})

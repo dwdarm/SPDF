@@ -1,0 +1,5 @@
+file(GLOB SOURCES "*.cxx")
+add_library(djvu ${SOURCES})
+target_include_directories(djvu PUBLIC ${DDJVUAPI_INCLUDE_DIRS})
+target_compile_options(djvu PUBLIC ${DDJVUAPI_CFLAGS_OTHER})
+target_link_libraries(djvu ${DDJVUAPI_LIBRARIES})
