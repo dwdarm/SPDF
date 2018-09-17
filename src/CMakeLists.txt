@@ -28,7 +28,3 @@ target_link_libraries(SPDF ${DDJVUAPI_LIBRARIES})
 target_include_directories(SPDF PUBLIC ${GTKMM_INCLUDE_DIRS})
 target_compile_options(SPDF PUBLIC ${GTKMM_CFLAGS_OTHER})
 target_link_libraries(SPDF ${GTKMM_LIBRARIES})
-
-target_include_directories(SPDF PUBLIC ${SQLITE3_INCLUDE_DIRS})
-target_compile_options(SPDF PUBLIC ${SQLITE3_CFLAGS_OTHER})
-target_link_libraries(SPDF ${SQLITE3_LIBRARIES})
