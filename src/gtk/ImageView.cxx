@@ -17,12 +17,17 @@
 #include <cstring>
 #include <iostream>
 
+const char defcssdata[] {
+	"scrolledwindow { background-color:grey; }"\
+	"GtkScrolledWindow { background-color:grey; }"
+};
+
 spdf::ImageView::ImageView () : Gtk::ScrolledWindow ()
 {
 	m_vadj = get_vadjustment ();
 	
 	cssprovider = Gtk::CssProvider::create ();
-	if (!cssprovider->load_from_data ("GtkScrolledWindow { background-color:grey; }")) {
+	if (!cssprovider->load_from_data (defcssdata)) {
 		std::cout << "CSS error\n";
 	}
 	get_style_context ()->add_provider (cssprovider, 5);
