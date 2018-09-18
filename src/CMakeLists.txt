@@ -16,15 +16,6 @@ target_link_libraries(SPDF pdf)
 target_link_libraries(SPDF djvu)
 target_link_libraries(SPDF ${CMAKE_THREAD_LIBS_INIT})
 
-
-target_include_directories(SPDF PUBLIC ${POPPLER_INCLUDE_DIRS})
-target_compile_options(SPDF PUBLIC ${POPPLER_CFLAGS_OTHER})
 target_link_libraries(SPDF ${POPPLER_LIBRARIES})
-
-target_include_directories(SPDF PUBLIC ${DDJVUAPI_INCLUDE_DIRS})
-target_compile_options(SPDF PUBLIC ${DDJVUAPI_CFLAGS_OTHER})
 target_link_libraries(SPDF ${DDJVUAPI_LIBRARIES})
-
-target_include_directories(SPDF PUBLIC ${GTKMM_INCLUDE_DIRS})
-target_compile_options(SPDF PUBLIC ${GTKMM_CFLAGS_OTHER})
 target_link_libraries(SPDF ${GTKMM_LIBRARIES})
