@@ -59,6 +59,8 @@ spdf::Cache::add (std::string &key, void *value)
 	cv.data = value;
 	m_cache[key] = cv;
 	m_time = m_time + 1;
+	
+	return 0;
 }
 
 void
@@ -76,11 +78,16 @@ spdf::Cache::clear ()
 int
 spdf::Cache::erase (std::string &key) 
 {
+	int ret = 0;
+	
 	if (m_cache.find (key) != m_cache.end ()) {
 		spdf::CacheV &cv = m_cache[key];
 		m_delete_handler (cv.data);
 		m_cache.erase (m_cache.find (key));
+		ret = 1;
 	}
+	
+	return ret;
 }
 
 void *
