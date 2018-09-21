@@ -29,6 +29,11 @@ namespace spdf {
 		int x, y;
 		int width, height;
 	} Rect;
+	
+	enum PageSelectionStyle {
+		SELECTION_STYLE_WORD,
+		SELECTION_STYLE_LINE
+	};
 
 	class DocumentPage {
 		
@@ -38,6 +43,8 @@ namespace spdf {
 			virtual Image *render (double scale) = 0;
 			virtual std::string searchText (Rect &rect, double scale);
 			virtual std::vector<Rect> searchRect (std::string &text, double scale);
+			virtual std::vector<Rect> getSelectionRegion (PageSelectionStyle style, Rect &rect, double scale);
+			virtual std::string getSelectionText (PageSelectionStyle style, Rect &rect, double scale);
 			virtual double getHeight () const;
 			virtual int getIndex () const;
 			virtual double getWidth () const;

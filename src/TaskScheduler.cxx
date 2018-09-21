@@ -16,7 +16,14 @@
 #include "TaskScheduler.h"
 #include <iostream>
 
+#if defined(_WIN32)
+#include <windows.h>
+#else 
+#include <unistd.h>
+#endif
+
 static std::mutex m_queue_mutex;
+static void set_idle (int ms);
 static void scheduler (spdf::RefThreadData pdata);
 spdf::TaskScheduler *spdf::TaskScheduler::m_instance = NULL;
 
@@ -128,6 +135,16 @@ spdf::TaskScheduler::init (int numberOfThread)
 }
 
 static void 
+set_idle (int ms) 
+{
+	#if defined(_WIN32)
+	Sleep (ms);
+	#else 
+	usleep (ms*1000);
+	#endif
+}
+
+static void 
 scheduler (spdf::RefThreadData pdata)
 {
 	spdf::Task *task = NULL;
@@ -143,7 +160,7 @@ scheduler (spdf::RefThreadData pdata)
 			}
 		} else {
 			m_queue_mutex.unlock ();
-			usleep (10000);
+			set_idle (10);
 		}
 	}
 }

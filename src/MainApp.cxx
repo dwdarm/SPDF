@@ -26,6 +26,7 @@
 #include "Message.h"
 #include "MessageQueue.h"
 #include "ConfigParser.h"
+#include "Bookmark.h"
 
 #if defined(_WIN32)
 #include <direct.h>
@@ -44,16 +45,20 @@ spdf::MainApp::MainApp () : spdf::MainWindow ()
 	
 	// configuration
 	ConfigParser parser;
-	m_path = getenv("HOME");
-	m_path += "/.config/spdf";
 	
 	#if defined(_WIN32)
+	m_path = "config";
 	_mkdir(m_path.c_str());
+	m_path += "\\";
+	
     #else 
+    m_path = getenv("HOME");
+	m_path += "/.config/spdf";
 	mkdir(m_path.c_str(), 0755); 
+	m_path += "/";
     #endif
 	
-	std::string cfg_path = m_path + "/config.cfg";
+	std::string cfg_path = m_path + "config.cfg";
 	m_configs = parser.parse (cfg_path);
 	if (!m_configs.size ()) {
 		m_configs[THREAD_NUM] = std::to_string (DEFAULT_THREAD_NUM_VALUE);
@@ -75,32 +80,15 @@ spdf::MainApp::MainApp () : spdf::MainWindow ()
 	}
 	spdf::Cache::instance ()->setDeleteHandler (
 			[](void *data) { 
-				spdf::Image *image = (spdf::Image*) data;
+				spdf::Image *image = static_cast<spdf::Image*> (data);
 				delete (image);
 			}
 	);
 	spdf::Cache::instance ()->setMaxSize (std::stoi (m_configs[CACHE_SIZE]));
 	
 	// load bookmarks
-	std::string sindex;
-	std::vector<int> indexs; 
-	std::string mark_path = m_path + "/marks.cfg";
-	std::map<std::string, std::string> marks = parser.parse (mark_path);
-	if (!marks.size ()) {
-		parser.save (mark_path, marks);
-	} else {
-		for (auto it = marks.begin (); it != marks.end (); it++) {
-			sindex = (*it).second;
-			int start = 0, end = 0;
-			while ((end = sindex.find_first_of (',', start)) != -1) {
-				 indexs.push_back (std::stoi (std::string (sindex, start, end-start)) - 1);
-				 start = end + 1;
-			}
-			indexs.push_back (std::stoi (std::string (sindex, start, end-start)));
-			m_marks[(*it).first] = indexs;
-			indexs.clear ();
-		}
-	}
+	std::string mark_path = m_path + "marks.cfg";
+	spdf::Bookmark::instance ()->open (mark_path);
 	
 	// register toolbar button signal
 	m_main_toolbar.getOpenButtonItem ().signal_clicked ().connect 
@@ -139,6 +127,9 @@ spdf::MainApp::MainApp () : spdf::MainWindow ()
 	
 	// register popup menu signal
 	
+	m_page_nav_popup.getCopyMenuItem ().signal_activate ().connect
+				  (sigc::mem_fun (*this, &MainApp::on_copy_btn_clicked));
+	
 	m_page_nav_popup.getFirstMenuItem ().signal_activate ().connect
 				  (sigc::mem_fun (*this, &MainApp::on_first_btn_clicked));
 				  
@@ -166,7 +157,10 @@ spdf::MainApp::MainApp () : spdf::MainWindow ()
 				 
 	m_tabpageview.signal_page_added ().connect 
 				 (sigc::mem_fun (*this, &MainApp::on_tab_page_added));
-				 
+	
+	m_selecting = false;	
+	Glib::signal_timeout().connect (sigc::mem_fun 
+								 (*this, &MainApp::on_timeout_sel), 100);		 
 	Glib::signal_timeout().connect (sigc::mem_fun 
 								 (*this, &MainApp::on_timeout_msg), 10);
 	
@@ -175,25 +169,6 @@ spdf::MainApp::MainApp () : spdf::MainWindow ()
 	show_all ();
 	
 	m_tabpageview.appendPage ("Document");
-}
-
-// save bookmark to file
-void 
-spdf::MainApp::save_bookmark ()
-{
-	std::map<std::string, std::string> marks;
-	ConfigParser parser;
-	std::string mark_path = m_path + "/marks.cfg";
-	
-	for (auto itx = m_marks.begin (); itx != m_marks.end (); itx++) {
-		for (auto ity = m_marks[(*itx).first].begin (); ity != m_marks[(*itx).first].end (); ity++) {
-			marks[(*itx).first] += std::to_string((*ity) + 1);
-			marks[(*itx).first] += ',';
-		}
-		marks[(*itx).first].pop_back ();
-	}
-	
-	parser.save (mark_path, marks);
 }
 
 // draw a rendered page
@@ -264,22 +239,25 @@ void
 spdf::MainApp::fill_bookmark (spdf::PageView &pageview)
 {
 	std::vector<int> marks;
+	std::string title;
 	Glib::ustring text;
 	int index = 0;
 	int start = 0;
 	int end = 0;
 	
 	pageview.getSidebarView ().getBookmarkView ().clear ();
+	title = pageview.m_document->getTitle ();
+	marks = Bookmark::instance ()->get (title);
 	
-	if (m_marks.find (pageview.m_document->getTitle ()) == m_marks.end ()) {
+	if (marks.empty ()) {
 		return;
 	}
 	
-	marks = m_marks[pageview.m_document->getTitle ()];
 	for (auto it = marks.begin (); it != marks.end (); it++) {
 		text = "Page " + std::to_string (*it + 1);
 		index = (*it);
-		pageview.getSidebarView ().getBookmarkView ().append (text, index + 1);
+		pageview.getSidebarView ().getBookmarkView ().append 
+		                                              (text, index + 1);
 	}
 }
 
@@ -292,6 +270,7 @@ spdf::MainApp::update_toolbar (spdf::PageView &pageview)
 	Gtk::CheckButton *check = NULL;
 	Glib::ustring pages;
 	Glib::ustring index;
+	std::string title;
 	bool active = false;
 	
 	entry = static_cast<Gtk::Entry*> 
@@ -306,9 +285,8 @@ spdf::MainApp::update_toolbar (spdf::PageView &pageview)
 	if(pageview.m_document.get ()) {
 		pages = " of " + std::to_string (pageview.m_document->getPages ());
 		index = std::to_string (pageview.m_index + 1);
-		if (is_marked (pageview.m_document->getTitle (), pageview.m_index)) {
-			active = true;
-		}
+		title = pageview.m_document->getTitle ();
+		active = Bookmark::instance ()->find (title, pageview.m_index);
 	}
 	
 	entry->set_text (index);
@@ -345,25 +323,6 @@ spdf::MainApp::find_text (spdf::PageView &pageview, std::string &str)
 	}
 	pageview.getImageView ().clearImage ();
 	pageview.getImageView ().appendRects (irects);
-}
-
-bool 
-spdf::MainApp::is_marked (const std::string &title, int index)
-{
-	bool ret = false;
-	
-	if (m_marks.find (title) == m_marks.end ()) {
-		return ret;
-	}
-	
-	for (auto it = m_marks[title].begin (); it != m_marks[title].end (); it++) {
-		if ((*it) == index) {
-			ret = true;
-			break;
-		}
-	}
-	
-	return ret;
 }
 
 /*
@@ -546,31 +505,22 @@ spdf::MainApp::on_mark_btn_toggled ()
 	}
 	
 	std::string title = pageview->m_document->getTitle ();
+	int index = pageview->m_index;
 	check = static_cast<Gtk::CheckButton*>
 				           (m_main_toolbar.getMarkItem ().get_child ());
 	
 	if (check->get_active ()) {
-		if (is_marked (title, pageview->m_index)) {
+		if (Bookmark::instance ()->find (title, index)) {
 			return;
 		}
-		m_marks[title].push_back (pageview->m_index);
+		Bookmark::instance ()->add (title, index);
 		fill_bookmark (*pageview);
-		save_bookmark ();
 	} else {
-		if (!is_marked (title, pageview->m_index)) {
+		if (!Bookmark::instance ()->find (title, index)) {
 			return;
 		}
-		for (auto it = m_marks[title].begin (); it != m_marks[title].end (); it++) {
-			if ((*it) == pageview->m_index) {
-				m_marks[title].erase (it);
-				if (m_marks[title].size () == 0) {
-					m_marks.erase (title);
-				}
-				fill_bookmark (*pageview);
-				save_bookmark ();
-				break;
-			}
-		}
+		Bookmark::instance ()->erase (title, index);
+		fill_bookmark (*pageview);
 	}
 }
 
@@ -590,7 +540,7 @@ spdf::MainApp::on_entry_text_changed ()
 		return;
 	}
 	
-	entry = (Gtk::Entry*)m_main_toolbar.getNavEntryItem ().get_child ();
+	entry = static_cast<Gtk::Entry*> (m_main_toolbar.getNavEntryItem ().get_child ());
 	
 	try {
 		index = std::stoi (entry->get_text ().raw ());
@@ -645,6 +595,33 @@ spdf::MainApp::on_last_btn_clicked ()
 }
 
 void 
+spdf::MainApp::on_copy_btn_clicked ()
+{
+	spdf::PageView *pageview = NULL;
+	spdf::DocumentPage *page = NULL;
+	std::string text;
+	
+	pageview = m_tabpageview.getCurrentPage ();
+	if (!pageview) {
+		return;
+	}
+	
+	if (!pageview->m_document.get ()) {
+		return;
+	}
+	
+	page = pageview->m_document->createPage (pageview->m_index);
+	
+	for (auto it = m_selected_regs.begin (); it != m_selected_regs.end (); it++) {
+		text += page->searchText (*it, pageview->m_scale);
+	}
+	
+	Gtk::Clipboard::get	()->set_text (text.data ());
+	
+	delete (page);
+}
+
+void 
 spdf::MainApp::on_tab_page_added (Gtk::Widget* page, guint page_num)
 {
 	spdf::PageView *pageview = NULL;
@@ -667,10 +644,10 @@ spdf::MainApp::on_tab_page_added (Gtk::Widget* page, guint page_num)
 							 (*this, &MainApp::on_bookmark_sel_changed));
 							 
 	pageview->getImageView ().getEventBox ().signal_button_press_event()
-	 .connect (sigc::mem_fun (*this, &MainApp::on_idle_right_click_event));
+	 .connect (sigc::mem_fun (*this, &MainApp::on_image_button_event));
 	  
-	//pageview->getImageView ().getEventBox ().signal_button_release_event()
-	//  .connect (sigc::mem_fun (*this, &MainApp::on_image_button_event));
+	pageview->getImageView ().getEventBox ().signal_button_release_event()
+	  .connect (sigc::mem_fun (*this, &MainApp::on_image_button_event));
 }
 
 void
@@ -762,6 +739,8 @@ spdf::MainApp::on_open_dialog_resp (int id, Gtk::FileChooser &chooser)
 	}
 	
 	pageview->m_document.reset ();
+	pageview->m_index = 0;
+	pageview->m_scale = 1.0;
 	pageview->getSidebarView ().getOutlineView ().clear ();
 	pageview->getSidebarView ().getBookmarkView ().clear ();
 	
@@ -847,55 +826,71 @@ spdf::MainApp::on_timeout_msg ()
 }
 
 bool 
-spdf::MainApp::on_image_button_event (GdkEventButton *event)
-{
-	static int bX1 = -1;
-	static int bY1 = -1;
-	static int bX2 = -1;
-	static int bY2 = -1;
-	
+spdf::MainApp::on_timeout_sel ()
+{	
 	spdf::PageView *pageview = NULL;
 	spdf::DocumentPage *page = NULL;
-	spdf::Rect rect;
-	int wW = 0;
-	int wH = 0;
-	int iW = 0;
-	int iH = 0;
+	
+	if (m_selecting) {
+		pageview = m_tabpageview.getCurrentPage ();
+		pageview->getImageView ().refresh ();
+		m_selected_regs.clear ();
+		std::shared_ptr<ImageViewPointer> pointer = 
+								pageview->getImageView ().getPointer ();
+		if ((pointer->x != -1) && (pointer->y != -1)) {
+			m_selected_rect.width = pointer->x;
+			m_selected_rect.height = pointer->y;
+			page = pageview->m_document->createPage (pageview->m_index);
+			m_selected_regs = page->getSelectionRegion 
+			 (SELECTION_STYLE_WORD, m_selected_rect, pageview->m_scale);
+			 
+			std::vector<ImageViewRect> irects;
+			ImageViewRect irect;
+			irect.color.r = 0;
+			irect.color.g = 0;
+			irect.color.b = 0;
+			irect.color.a = 100;
+			for (auto it = m_selected_regs.begin (); it != m_selected_regs.end (); it++) {
+				irect.x = (*it).x;
+				irect.y = (*it).y;
+				irect.width = (*it).width - (*it).x;
+				irect.height = (*it).height - (*it).y;
+				irects.push_back (irect);
+			}
+			pageview->getImageView ().appendRects (irects);
+			delete (page);
+	    }
+	}
+	
+	return true;
+}
+
+bool 
+spdf::MainApp::on_image_button_event (GdkEventButton *event)
+{
+	spdf::PageView *pageview = NULL;
+	std::shared_ptr<ImageViewPointer> pointer;
 	
 	pageview = m_tabpageview.getCurrentPage ();
 	if (!pageview) {
 		return true;
 	}
 	
-	gdk_window_get_geometry (event->window, NULL, NULL, &wW, &wH);
-	iW = pageview->getImageView ().getImageWidth ();
-	iH = pageview->getImageView ().getImageHeight ();
+	if (event->button == 3) {
+		return on_idle_right_click_event (event);
+     }
 
 	if (event->type == GDK_BUTTON_PRESS) {
-		bX1 = (static_cast<int>(event->x)) - ((wW/2) - (iW/2));
-		bY1 = (static_cast<int>(event->y)) - ((wH/2) - (iH/2));
-		if (!(((bX1 >= 0) && bX1 < iW) && ((bY1 >= 0) && bY1 < iH))) {
-			bX1 = -1;
-			bY1 = -1;
+		pointer = pageview->getImageView ().getPointer ();
+		if ((pointer->x == -1) && (pointer->y == -1)) {
+			m_selecting = false;
+			return true;
 		}
+		m_selected_rect.x = pointer->x;
+		m_selected_rect.y = pointer->y;
+		m_selecting = true;
 	} else if (event->type == GDK_BUTTON_RELEASE) {
-		bX2 = (static_cast<int>(event->x)) - ((wW/2) - (iW/2));
-		bY2 = (static_cast<int>(event->y)) - ((wH/2) - (iH/2));
-		if (!(((bX2 >= 0) && bX2 < iW) && ((bY2 >= 0) && bY2 < iH))) {
-			bX2 = -1;
-			bY2 = -1;
-		}
-		
-		if ((bX1 != -1) && (bX2 != -1) && (bY1 != -1) && (bY2 != -1)) {
-			page = pageview->m_document->createPage (pageview->m_index);
-			rect.x = bX1;
-			rect.y = bY1;
-			rect.width = bX2;
-			rect.height = bY2;
-			std::cout << "text = " << page->searchText 
-									  (rect, pageview->m_scale) << "\n";
-			delete (page);
-		}
+		m_selecting = false;
 	}
 	
 	return true;
@@ -905,6 +900,7 @@ bool
 spdf::MainApp::on_idle_right_click_event (GdkEventButton *event)
 {
 	spdf::PageView *pageview = NULL;
+	bool copy = false;
 	
 	pageview = m_tabpageview.getCurrentPage ();
 	if (!pageview) {
@@ -917,6 +913,10 @@ spdf::MainApp::on_idle_right_click_event (GdkEventButton *event)
 	
 	if (event->type == GDK_BUTTON_PRESS) {
 		if (event->button == 3) {
+			if (m_selected_regs.size ()) {
+				copy = true;
+			}
+			m_page_nav_popup.getCopyMenuItem ().set_sensitive (copy);
 			m_page_nav_popup.popup (event->button, event->time);
         }
 	}

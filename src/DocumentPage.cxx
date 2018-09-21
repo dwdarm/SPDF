@@ -39,6 +39,18 @@ spdf::DocumentPage::searchRect (std::string &text, double scale)
 	return std::vector<Rect>  ();
 }
 
+std::vector<spdf::Rect> 
+spdf::DocumentPage::getSelectionRegion (PageSelectionStyle style, Rect &rect, double scale)
+{
+	return std::vector<Rect>  ();
+}
+
+std::string 
+spdf::DocumentPage::getSelectionText (PageSelectionStyle style, Rect &rect, double scale)
+{
+	return std::string ();
+}
+
 double
 spdf::DocumentPage::getHeight () const
 {

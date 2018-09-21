@@ -18,6 +18,7 @@
 #include <poppler/SplashOutputDev.h>
 #include <poppler/splash/SplashBitmap.h>
 #include <poppler/TextOutputDev.h>
+#include <poppler/goo/GooList.h>
 
 #include <iostream>
 #include <cstring>
@@ -146,4 +147,96 @@ spdf::PDFPage::searchRect (std::string &text, double scale)
     delete [] (utext);
 	
 	return retVal;
+}
+
+std::vector<spdf::Rect> 
+spdf::PDFPage::getSelectionRegion (PageSelectionStyle style, Rect &rect, double scale)
+{
+	TextOutputDev *tod = NULL;
+	TextPage *text_page = NULL;
+	PDFRectangle prect;
+	SelectionStyle pstyle;
+	GooList *list = NULL;
+	double xhdi = 72.0 * scale;
+	double yhdi = 72.0 * scale;
+	std::vector<spdf::Rect> retVal;
+	
+	tod = new TextOutputDev (NULL, gTrue, 0.0, gFalse, gFalse);
+	m_poppler_page->getDoc ()->displayPage(tod, getIndex ()+1,
+                            xhdi, yhdi, 0, gFalse, gFalse, gFalse, NULL,
+                            NULL, NULL, NULL, gFalse);
+    text_page = tod->takeText();
+    
+    prect.x1 = rect.x;
+    prect.y1 = rect.y;
+    prect.x2 = rect.width;
+    prect.y2 = rect.height;
+    
+    if (style == SELECTION_STYLE_WORD) {
+		pstyle = selectionStyleWord;
+	} else {
+		pstyle = selectionStyleLine;
+	}
+	
+    list = text_page->getSelectionRegion(&prect, pstyle, 1.0);
+    if (!list) {
+		return retVal;
+	}
+	
+	PDFRectangle *lrect = NULL;
+	Rect rrect;
+    for (int i = 0; i < list->getLength (); i++) {
+		lrect = (PDFRectangle*) list->get (i);
+		rrect.x = lrect->x1;
+		rrect.y = lrect->y1;
+		rrect.width = lrect->x2;
+		rrect.height = lrect->y2;
+		retVal.push_back (rrect);
+	}
+    
+    text_page->decRefCnt();
+    delete (tod);
+    delete (list);
+    
+    return retVal;
+}
+
+std::string 
+spdf::PDFPage::getSelectionText (PageSelectionStyle style, Rect &rect, double scale)
+{
+	TextOutputDev *tod = NULL;
+	TextPage *text_page = NULL;
+	PDFRectangle prect;
+	SelectionStyle pstyle;
+	double xhdi = 72.0 * scale;
+	double yhdi = 72.0 * scale;
+	GooString *text = NULL;
+	std::string retVal;
+	
+	tod = new TextOutputDev (NULL, gTrue, 0.0, gFalse, gFalse);
+	m_poppler_page->getDoc ()->displayPage(tod, getIndex ()+1,
+                            xhdi, yhdi, 0, gFalse, gFalse, gFalse, NULL,
+                            NULL, NULL, NULL, gFalse);
+    text_page = tod->takeText();
+    
+    prect.x1 = rect.x;
+    prect.y1 = rect.y;
+    prect.x2 = rect.width;
+    prect.y2 = rect.height;
+    
+    if (style == SELECTION_STYLE_WORD) {
+		pstyle = selectionStyleWord;
+	} else {
+		pstyle = selectionStyleLine;
+	}
+    
+    text = text_page->getSelectionText(&prect, pstyle);
+    if (text) {
+		retVal = text->getCString ();
+	}
+    
+    text_page->decRefCnt();
+    delete (tod);
+    
+    return retVal;
 }

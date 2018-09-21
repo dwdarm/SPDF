@@ -43,6 +43,11 @@ namespace spdf {
 		bool fill;
 	} ImageViewRect;
 	
+	typedef struct {
+		int x;
+		int y;
+	} ImageViewPointer;
+	
 	class ImageView : public Gtk::ScrolledWindow {
 		public: 
 			ImageView ();
@@ -56,6 +61,7 @@ namespace spdf {
 			int getImageHeight () const;
 			int getImageWidth () const;
 			std::shared_ptr<ImageViewColor> getPixel (int x, int y);
+			std::shared_ptr<ImageViewPointer> getPointer ();
 			void refresh ();
 			void setImage (const unsigned char *d, int w, int h, int row);
 			void setPixel (int x, int y, ImageViewColor &color);

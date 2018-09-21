@@ -25,6 +25,7 @@ namespace spdf {
 	class PageNavPopup : public Gtk::Menu {
 		public:
 			PageNavPopup ();
+			Gtk::MenuItem &getCopyMenuItem ();
 			Gtk::MenuItem &getPrevMenuItem ();
 			Gtk::MenuItem &getNextMenuItem ();
 			Gtk::MenuItem &getFirstMenuItem ();
@@ -34,6 +35,7 @@ namespace spdf {
 			Gtk::CheckMenuItem &getMarkMenuItem ();
 			
 		private:
+			Gtk::MenuItem m_copy_item;
 			Gtk::MenuItem m_prev_item;
 			Gtk::MenuItem m_next_item;
 			Gtk::MenuItem m_first_item;
@@ -44,6 +46,7 @@ namespace spdf {
 			
 			Gtk::SeparatorMenuItem m_sep1;
 			Gtk::SeparatorMenuItem m_sep2;
+			Gtk::SeparatorMenuItem m_sep3;
 			
 	};
 }

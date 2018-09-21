@@ -35,10 +35,10 @@ namespace spdf {
 		private:
 			std::string m_path;
 			std::map<std::string, std::string> m_configs;
-			std::map<std::string, std::vector<int>> m_marks;
 			PageNavPopup m_page_nav_popup;
-			void save_bookmark ();
-			bool is_marked (const std::string &title, int index);
+			bool m_selecting;
+			Rect m_selected_rect;
+			std::vector<Rect> m_selected_regs;
 			void draw_page (spdf::PageView &pageview);
 			void fill_outline (spdf::PageView &pageview);
 			void fill_bookmark (spdf::PageView &pageview);
@@ -62,6 +62,7 @@ namespace spdf {
 			
 			void on_first_btn_clicked ();
 			void on_last_btn_clicked ();
+			void on_copy_btn_clicked ();
 			
 			void on_tab_page_changed (Gtk::Widget* page, guint page_num);
 			void on_tab_page_added (Gtk::Widget* page, guint page_num);
@@ -73,6 +74,7 @@ namespace spdf {
 			void on_find_dialog_resp (int id, Gtk::Entry &entry);
 			
 			bool on_timeout_msg ();
+			bool on_timeout_sel ();
 			bool on_image_button_event (GdkEventButton *event);
 			bool on_idle_right_click_event (GdkEventButton *event);
 	};

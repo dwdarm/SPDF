@@ -20,7 +20,6 @@
 #include "Task.h"
 #endif
 
-#include <unistd.h>
 #include <thread>
 #include <mutex>
 #include <stack>

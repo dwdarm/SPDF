@@ -36,6 +36,8 @@ namespace spdf {
 			Image *render (double scale);
 			std::string searchText (Rect &rect, double scale);
 			std::vector<Rect> searchRect (std::string &text, double scale);
+			std::vector<Rect> getSelectionRegion (PageSelectionStyle style, Rect &rect, double scale);
+			std::string getSelectionText (PageSelectionStyle style, Rect &rect, double scale);
 			
 		private:
 			Page *m_poppler_page;

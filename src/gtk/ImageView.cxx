@@ -14,6 +14,7 @@
  */
 
 #include "ImageView.h"
+#include <gdkmm/devicemanager.h>
 #include <cstring>
 #include <iostream>
 
@@ -258,6 +259,40 @@ spdf::ImageView::getPixel (int x, int y)
 	return std::shared_ptr<ImageViewColor> (c);
 }
 
+std::shared_ptr<spdf::ImageViewPointer> 
+spdf::ImageView::getPointer ()
+{
+	std::shared_ptr<ImageViewPointer> retVal (new ImageViewPointer);
+	Glib::RefPtr<Gdk::Window> window;
+	Glib::RefPtr<Gdk::Display> display;
+	Glib::RefPtr<Gdk::DeviceManager> devmgr;
+	Glib::RefPtr<Gdk::Device> pointer;
+	int x = 0, y = 0;
+	int win_x = 0, win_y = 0, win_h = 0, win_w = 0;
+	
+	window = m_image_event_box.get_window ();
+	display = window->get_display ();
+	devmgr = display->get_device_manager ();	
+	pointer = devmgr->get_client_pointer ();
+	
+	Gdk::ModifierType mod = Gdk::MODIFIER_MASK;
+	window->get_geometry (win_x, win_y, win_w, win_h);
+	window->get_device_position	(pointer, x, y, mod);
+	
+	retVal->x = x - ((win_w/2) - (m_image_width/2));
+	retVal->y = y - ((win_h/2) - (m_image_height/2));
+	
+	if ((retVal->x < 0) || (retVal->x > (m_image_width - 1))) {
+		retVal->x = -1;
+	}
+	
+	if ((retVal->y < 0) || (retVal->y > (m_image_height - 1))) {
+		retVal->y = -1;
+	}
+	
+	return retVal;
+}
+
 void
 spdf::ImageView::refresh ()
 {
@@ -266,7 +301,9 @@ spdf::ImageView::refresh ()
 	}
 	
 	clearImage ();
-	m_cdata.reset (); 
+	if (m_cdata.get ()) {
+		m_cdata.reset (); 
+	}
 	
 	m_pixbuf = Gdk::Pixbuf::create_from_data (m_data.get (), 
 			 Gdk::COLORSPACE_RGB, true, 8, m_image_width, m_image_height, 
