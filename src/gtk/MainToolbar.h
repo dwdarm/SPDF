@@ -37,6 +37,7 @@ namespace spdf {
 			Gtk::ToolButton &getFindButtonItem ();
 			Gtk::ToolButton &getZoominButtonItem ();
 			Gtk::ToolButton &getZoomoutButtonItem ();
+			Gtk::ToolButton &getFscreenButtonItem ();
 			Gtk::ToolButton &getAboutButtonItem ();
 			
 		private:
@@ -50,6 +51,7 @@ namespace spdf {
 			Gtk::ToolButton m_find_btn_item;
 			Gtk::ToolButton m_zoomin_btn_item;
 			Gtk::ToolButton m_zoomout_btn_item;
+			Gtk::ToolButton m_fscreen_btn_item;
 			Gtk::ToolButton m_about_btn_item;
 			
 			Gtk::Entry m_nav_ent;

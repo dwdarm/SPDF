@@ -25,25 +25,7 @@
 
 #include "PDFDocument.h"
 
-static char *
-unicode_to_ascii (unsigned int *val, int val_len) 
-{
-	char *retVal = NULL;
-	
-	retVal = new char[val_len+1];
-	for (int i = 0; i < val_len; i++) {
-		if (((char)val[i]) < 0) {
-			retVal[i] = ' ';
-		} else {
-			retVal[i] = (char)val[i];
-		}
-	}
-	retVal[val_len] = '\0';
-	
-	return retVal;
-}
-
-int
+static int
 get_page_index_from_link_action (Catalog *catalog, LinkAction *action)
 {
 	int retVal = 1;
@@ -101,9 +83,10 @@ outline_get_child (Catalog *catalog, OutlineItem *pitem)
 	LinkAction *action = NULL;
 	GooList *list = NULL;
 	OutlineItem *item = NULL;
-	char *title = NULL;
+	spdf::UString title;
 	int index = 1;
 	std::vector<spdf::DocumentOutlineItem> retVal;
+	std::vector<spdf::DocumentOutlineItem> child;
 	
 	pitem->open ();
 	if (pitem->hasKids ()) {
@@ -111,16 +94,15 @@ outline_get_child (Catalog *catalog, OutlineItem *pitem)
 		if (list) {
 			for (int i = 0; i < list->getLength (); i++) {
 				item = (OutlineItem*) list->get (i);
-				title = unicode_to_ascii (item->getTitle (), item->getTitleLength());
+				title = spdf::UString (item->getTitle (), item->getTitleLength());
 				action = item->getAction ();
 				if (action) {
 					index = get_page_index_from_link_action (catalog, action);
 				} else {
 					index = 1;
 				}
-				retVal.push_back (spdf::DocumentOutlineItem (std::string (title), 
-							 index, outline_get_child (catalog, item)));
-				delete [] (title);
+				child = outline_get_child (catalog, item);
+				retVal.push_back (spdf::DocumentOutlineItem (title, index, child));
 			}
 		}
 	}
@@ -201,7 +183,7 @@ spdf::PDFDocument::getOutline () const
 	OutlineItem *item = NULL;
 	GooList *list = NULL;
 	LinkAction *action = NULL;
-	char *title = NULL;
+	UString title;
 	int index = 1;
 	std::vector<DocumentOutlineItem> child;
 	
@@ -213,17 +195,15 @@ spdf::PDFDocument::getOutline () const
 			retVal = new DocumentOutline ();
 			for (int i = 0; i < list->getLength (); i++) {
 				item = (OutlineItem*) list->get (i);
-				title = unicode_to_ascii (item->getTitle (), item->getTitleLength());
+				title = UString (item->getTitle (), item->getTitleLength());
 				action = item->getAction ();
 				if (action) {
 					index = get_page_index_from_link_action (catalog, action);
 				} else {
 					index = 1;
 				}
-				retVal->getRoot ().push_back (
-					DocumentOutlineItem (std::string (title), index, 
-									outline_get_child (catalog, item)));
-				delete [] (title);
+				child = outline_get_child (catalog, item);
+				retVal->getRoot ().push_back (DocumentOutlineItem (title, index, child));
 			}
 		}
 	}

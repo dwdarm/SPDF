@@ -28,6 +28,10 @@
 #include "TabPageView.h"
 #endif
 
+#ifndef FINDVIEW_H
+#include "FindView.h"
+#endif
+
 namespace spdf {
 	class MainWindow : public Gtk::Window {
 		public:
@@ -37,6 +41,7 @@ namespace spdf {
 			Gtk::Box m_main_box;
 			MainToolbar m_main_toolbar;
 			TabPageView m_tabpageview;
+			FindView m_findview;
 	};
 }
 

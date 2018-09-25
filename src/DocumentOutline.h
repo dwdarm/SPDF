@@ -18,19 +18,20 @@
 
 #include <string>
 #include <vector>
+#include "UString.h"
 
 namespace spdf {
 	
 	class DocumentOutlineItem {
 		public:
-			DocumentOutlineItem (std::string &&title, int index, 
-							  std::vector<DocumentOutlineItem> &&child);
+			DocumentOutlineItem (UString &title, int index, 
+							  std::vector<DocumentOutlineItem> &child);
 			std::vector<DocumentOutlineItem> &getChild ();
 			int getIndex ();
-			std::string &getTitle ();
+			UString &getTitle ();
 			
 		private:
-			std::string m_title;
+			UString m_title;
 			int m_index;
 			std::vector<DocumentOutlineItem> m_child;
 	};

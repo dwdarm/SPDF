@@ -63,6 +63,10 @@ namespace spdf {
 			std::shared_ptr<ImageViewColor> getPixel (int x, int y);
 			std::shared_ptr<ImageViewPointer> getPointer ();
 			void refresh ();
+			void scrollDown ();
+			void scrollLeft ();
+			void scrollRight ();
+			void scrollUp ();
 			void setImage (const unsigned char *d, int w, int h, int row);
 			void setPixel (int x, int y, ImageViewColor &color);
 			
@@ -76,6 +80,7 @@ namespace spdf {
 			std::shared_ptr<unsigned char> m_cdata; 
 			Glib::RefPtr<Gdk::Pixbuf> m_pixbuf;
 			Glib::RefPtr<Gtk::CssProvider> cssprovider;
+			Glib::RefPtr<Gtk::Adjustment> m_hadj;
 			Glib::RefPtr<Gtk::Adjustment> m_vadj;
 			
 			void on_mvadj_val_changed ();

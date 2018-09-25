@@ -68,6 +68,10 @@ spdf::MainToolbar::MainToolbar ()
 	m_zoomout_btn_item.set_tooltip_text ("Zoom out");
 	append (m_zoomout_btn_item);
 	
+	m_fscreen_btn_item.set_icon_name ("view-fullscreen");
+	m_fscreen_btn_item.set_tooltip_text ("Full screen");
+	append (m_fscreen_btn_item);
+	
 	append (m_sep5);
 	
 	m_about_btn_item.set_icon_name ("help-about");
@@ -133,6 +137,12 @@ Gtk::ToolButton &
 spdf::MainToolbar::getZoomoutButtonItem ()
 {
 	return m_zoomout_btn_item;
+}
+
+Gtk::ToolButton &
+spdf::MainToolbar::getFscreenButtonItem ()
+{
+	return m_fscreen_btn_item;
 }
 
 Gtk::ToolButton &

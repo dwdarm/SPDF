@@ -13,16 +13,33 @@
  *
  */
 
-#include <glibmm/ustring.h>
-#include "MainWindow.h"
+#ifndef FINDVIEW_H
+#define FINDVIEW_H
 
-spdf::MainWindow::MainWindow ()
-{
-	m_main_box.set_orientation (Gtk::ORIENTATION_VERTICAL);
+#include <gtkmm/toolbar.h>
+#include <gtkmm/toolbutton.h>
+#include <gtkmm/label.h>
+#include <gtkmm/entry.h>
+
+namespace spdf {
 	
-	m_main_box.pack_start (m_main_toolbar, 0, 0);
-	m_main_box.pack_start (m_tabpageview, 1, 1);
-	m_main_box.pack_start (m_findview, 0, 0);
-	
-	add (m_main_box);
+	class FindView : public Gtk::Toolbar {
+		public: 
+			FindView ();
+			Gtk::Entry &getEntry ();
+			
+		private:
+			Gtk::ToolItem m_label_item;
+			Gtk::ToolItem m_entry_item;
+			Gtk::ToolButton m_prev_btn;
+			Gtk::ToolButton m_next_btn;
+			Gtk::ToolButton m_close_btn;
+			
+			Gtk::Label m_label;
+			Gtk::Entry m_entry;
+			
+			void on_close_btn_clicked ();
+	};
 }
+
+#endif

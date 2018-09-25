@@ -34,11 +34,13 @@ spdf::PageView *
 spdf::TabPageView::appendPage (const Glib::ustring &title)
 {
 	PageView *pageview = new PageView ();
+	int index = 0;
 	
 	pageview->getTabHeaderView ().getLabel ().set_text (title);
-	append_page (*pageview, pageview->getTabHeaderView ());
+	index = append_page (*pageview, pageview->getTabHeaderView ());
 	
 	show_all ();
+	set_current_page (index);
 	
 	return pageview;
 }

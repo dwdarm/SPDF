@@ -23,8 +23,7 @@ spdf::PageNavPopup::PageNavPopup ()
 		  m_first_item ("First page"),
 		  m_last_item ("Last page"),
 		  m_zoomout_item ("Zoom out"),
-		  m_zoomin_item ("Zoom in"),
-		  m_mark_item ("Marked")
+		  m_zoomin_item ("Zoom in")
 {
 	append (m_copy_item);
 	append (m_sep1);
@@ -35,8 +34,6 @@ spdf::PageNavPopup::PageNavPopup ()
 	append (m_sep2);
 	append (m_zoomout_item);
 	append (m_zoomin_item);
-	append (m_sep3);
-	append (m_mark_item);
 	
 	show_all ();
 }
@@ -81,10 +78,4 @@ Gtk::MenuItem &
 spdf::PageNavPopup::getZoominMenuItem ()
 {
 	return m_zoomin_item;
-}
-
-Gtk::CheckMenuItem &
-spdf::PageNavPopup::getMarkMenuItem ()
-{
-	return m_mark_item;
 }

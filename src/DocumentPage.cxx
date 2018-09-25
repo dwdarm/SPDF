@@ -27,10 +27,18 @@ spdf::DocumentPage::~DocumentPage ()
 	
 }
 
-std::string 
+spdf::UString
 spdf::DocumentPage::searchText (spdf::Rect &rect, double scale)
 {
-	return std::string ();
+	return spdf::UString ();
+}
+
+spdf::Rect 
+spdf::DocumentPage::searchRect (Rect &rect, std::string &text, double scale, PageSearchDirection dir)
+{
+	Rect retVal;
+	
+	return retVal;
 }
 
 std::vector<spdf::Rect> 

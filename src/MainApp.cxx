@@ -124,6 +124,9 @@ spdf::MainApp::MainApp () : spdf::MainWindow ()
 				           (m_main_toolbar.getMarkItem ().get_child ());
 	check->signal_toggled ().connect 
 				 (sigc::mem_fun (*this, &MainApp::on_mark_btn_toggled));
+				 
+	m_main_toolbar.getFscreenButtonItem ().signal_clicked ().connect
+				  (sigc::mem_fun (*this, &MainApp::on_fscreen_btn_clicked));
 	
 	// register popup menu signal
 	
@@ -147,28 +150,49 @@ spdf::MainApp::MainApp () : spdf::MainWindow ()
 				  
 	m_page_nav_popup.getZoomoutMenuItem ().signal_activate ().connect
 				  (sigc::mem_fun (*this, &MainApp::on_zoomout_btn_clicked));
-				  
-	//m_page_nav_popup.getMarkItem ().signal_toggled ().connect
-	//			  (sigc::mem_fun (*this, &MainApp::on_mark_pop_toggled));
-	
 				 
 	m_tabpageview.signal_switch_page ().connect 
 				 (sigc::mem_fun (*this, &MainApp::on_tab_page_changed));
 				 
 	m_tabpageview.signal_page_added ().connect 
 				 (sigc::mem_fun (*this, &MainApp::on_tab_page_added));
+				 
+	m_findview.getEntry ().signal_activate ().connect 
+		  (sigc::mem_fun (*this, &MainApp::on_find_entry_text_changed));
 	
 	m_selecting = false;	
-	Glib::signal_timeout().connect (sigc::mem_fun 
+	Glib::signal_timeout ().connect (sigc::mem_fun 
 								 (*this, &MainApp::on_timeout_sel), 100);		 
-	Glib::signal_timeout().connect (sigc::mem_fun 
+	Glib::signal_timeout ().connect (sigc::mem_fun 
 								 (*this, &MainApp::on_timeout_msg), 10);
+	
+	//add_events (Gdk::KEY_PRESS_MASK);							 
+	signal_key_press_event ().connect 
+		   (sigc::mem_fun (*this, &MainApp::on_mainapp_key_press_event), false);
 	
 	set_title ("SPDF");
 	set_size_request (800, 600);
 	show_all ();
 	
+	m_findview.hide ();
 	m_tabpageview.appendPage ("Document");
+}
+
+void 
+spdf::MainApp::go_fullscreen ()
+{
+	m_main_toolbar.hide ();
+	m_tabpageview.set_show_tabs (false);
+	
+	get_window ()->fullscreen ();
+}
+
+void 
+spdf::MainApp::go_unfullscreen ()
+{
+	m_main_toolbar.show_all ();
+	m_tabpageview.set_show_tabs (true);
+	get_window ()->unfullscreen ();
 }
 
 // draw a rendered page
@@ -228,7 +252,7 @@ spdf::MainApp::walk_fill_outline (spdf::OutlineView &outlineview,
 	Glib::ustring title;
 	
 	for (it = toc_item.begin (); it != toc_item.end (); it++) {
-		title = (*it).getTitle ();
+		title = (*it).getTitle ().data ();
 		parent = outlineview.append (title, (*it).getIndex (), iter);
 		walk_fill_outline (outlineview, (*it).getChild (), parent);
 	}
@@ -273,11 +297,11 @@ spdf::MainApp::update_toolbar (spdf::PageView &pageview)
 	std::string title;
 	bool active = false;
 	
-	entry = static_cast<Gtk::Entry*> 
+	entry = dynamic_cast<Gtk::Entry*> 
 					   (m_main_toolbar.getNavEntryItem ().get_child ());
-	label = static_cast<Gtk::Label*> 
+	label = dynamic_cast<Gtk::Label*> 
 	                 (m_main_toolbar.getPagesLabelItem ().get_child ());
-	check = static_cast<Gtk::CheckButton*>
+	check = dynamic_cast<Gtk::CheckButton*>
 				           (m_main_toolbar.getMarkItem ().get_child ());
 	pages = " of 0";
 	index = "0";
@@ -298,31 +322,37 @@ spdf::MainApp::update_toolbar (spdf::PageView &pageview)
 void 
 spdf::MainApp::find_text (spdf::PageView &pageview, std::string &str)
 {
-	std::shared_ptr<DocumentPage> 
-			page (pageview.m_document->createPage (pageview.m_index));
-	std::vector<Rect> rects = page->searchRect (str, pageview.m_scale);
-	std::vector<Rect>::iterator it;
+	static Rect rect = {0, 0, 0, 0};
+	static std::string text;
 	
-	if (rects.size () == 0) {
-		return;
+	std::shared_ptr<DocumentPage> page;
+	ImageViewRect irect;
+	
+	if (text != str) {
+		rect = {0, 0, 0, 0};
+		text = str;
 	}
 	
-	std::vector<ImageViewRect> irects;
-	ImageViewRect irect;
+	page = std::shared_ptr<DocumentPage> 
+				   (pageview.m_document->createPage (pageview.m_index));
+	rect = page->searchRect (rect, text, pageview.m_scale, SEARCH_DIRECTION_NEXT);
+	
 	irect.color.r = 0;
 	irect.color.g = 0;
 	irect.color.b = 0;
 	irect.color.a = 100;
 	pageview.getImageView ().refresh ();
-	for (it = rects.begin (); it != rects.end (); it++) {
-		irect.x = (*it).x;
-		irect.y = (*it).y;
-		irect.width = (*it).width;
-		irect.height = (*it).height;
-		irects.push_back (irect);
-	}
+	
+	irect.x = rect.x;
+	irect.y = rect.y;
+	irect.width = rect.width;
+	irect.height = rect.height;
+		
 	pageview.getImageView ().clearImage ();
-	pageview.getImageView ().appendRects (irects);
+	pageview.getImageView ().appendRect (irect);
+	
+	rect.x = rect.x + rect.width;
+	rect.y = rect.y + rect.height;
 }
 
 /*
@@ -422,20 +452,7 @@ spdf::MainApp::on_find_btn_clicked ()
 		return;
 	}
 	
-	Gtk::Dialog dialog ("Find");
-	Gtk::Box fbox;
-	Gtk::Label label ("Find: ");
-	Gtk::Entry entry;
-	fbox.pack_start (label, 0, 0, 10);
-	fbox.pack_start (entry, 0, 0, 10);
-	fbox.show_all ();
-	dialog.get_content_area ()->pack_start (fbox, 0, 0, 10);
-	dialog.add_button ("_Cancel", GTK_RESPONSE_CANCEL);
-	dialog.add_button ("_Find", GTK_RESPONSE_ACCEPT);
-	dialog.signal_response ().connect (sigc::bind<-1, Gtk::Entry&> 
-		(sigc::mem_fun (*this, &MainApp::on_find_dialog_resp), entry));
-	
-	dialog.run ();
+	m_findview.show_all ();
 }
 
 void 
@@ -472,6 +489,12 @@ spdf::MainApp::on_zoomout_btn_clicked ()
 	
 	pageview->m_scale -= SCALE_STEP;
 	draw_page (*pageview);
+}
+
+void 
+spdf::MainApp::on_fscreen_btn_clicked ()
+{
+	go_fullscreen ();
 }
 
 void 
@@ -599,7 +622,7 @@ spdf::MainApp::on_copy_btn_clicked ()
 {
 	spdf::PageView *pageview = NULL;
 	spdf::DocumentPage *page = NULL;
-	std::string text;
+	Glib::ustring text;
 	
 	pageview = m_tabpageview.getCurrentPage ();
 	if (!pageview) {
@@ -613,10 +636,11 @@ spdf::MainApp::on_copy_btn_clicked ()
 	page = pageview->m_document->createPage (pageview->m_index);
 	
 	for (auto it = m_selected_regs.begin (); it != m_selected_regs.end (); it++) {
-		text += page->searchText (*it, pageview->m_scale);
+		text += page->searchText (*it, pageview->m_scale).data ();
+		text += ' ';
 	}
 	
-	Gtk::Clipboard::get	()->set_text (text.data ());
+	Gtk::Clipboard::get	()->set_text (text);
 	
 	delete (page);
 }
@@ -722,6 +746,25 @@ spdf::MainApp::on_bookmark_sel_changed ()
 	draw_page (*pageview);
 }
 
+void 
+spdf::MainApp::on_find_entry_text_changed ()
+{
+	spdf::PageView *pageview = NULL;
+	std::string text;
+	
+	pageview = m_tabpageview.getCurrentPage ();
+	if (!pageview) {
+		return;
+	}
+	
+	if (!pageview->m_document.get ()) {
+		return;
+	}
+	
+	text = m_findview.getEntry ().get_text ().raw ();
+	find_text (*pageview, text);
+}
+
 void
 spdf::MainApp::on_open_dialog_resp (int id, Gtk::FileChooser &chooser)
 {	
@@ -759,25 +802,6 @@ spdf::MainApp::on_open_dialog_resp (int id, Gtk::FileChooser &chooser)
 	pageview->showSidebarView ();
 	update_toolbar (*pageview);
 	draw_page (*pageview);
-}
-
-void 
-spdf::MainApp::on_find_dialog_resp (int id, Gtk::Entry &entry)
-{
-	spdf::PageView *pageview = NULL;
-	std::string text;
-	
-	if (id != GTK_RESPONSE_ACCEPT) {
-		return;
-	}
-	
-	pageview = m_tabpageview.getCurrentPage ();
-	if (!pageview) {
-		return;
-	}
-	
-	text = entry.get_text ().raw ();
-	find_text (*pageview, text);
 }
 
 bool 
@@ -840,6 +864,11 @@ spdf::MainApp::on_timeout_sel ()
 		if ((pointer->x != -1) && (pointer->y != -1)) {
 			m_selected_rect.width = pointer->x;
 			m_selected_rect.height = pointer->y;
+			if (((m_selected_rect.width - m_selected_rect.x) == 0) &&
+			    ((m_selected_rect.height - m_selected_rect.y) == 0)) {
+				m_selected_regs.clear ();
+				return true;
+			}
 			page = pageview->m_document->createPage (pageview->m_index);
 			m_selected_regs = page->getSelectionRegion 
 			 (SELECTION_STYLE_WORD, m_selected_rect, pageview->m_scale);
@@ -922,4 +951,212 @@ spdf::MainApp::on_idle_right_click_event (GdkEventButton *event)
 	}
 	
 	return true;
+}
+
+// Event key handler
+bool 
+spdf::MainApp::on_mainapp_key_press_event (GdkEventKey *event)
+{
+	static bool show_find = false;
+	spdf::PageView *pageview = NULL;
+	Gtk::CheckButton *check = NULL;
+	
+	pageview = m_tabpageview.getCurrentPage ();
+	if (!pageview) {
+		return true;
+	}
+	
+	switch (event->keyval) {
+		
+		// Open a file
+		case GDK_KEY_o:
+			if ((event->state &
+				(GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) != 
+														GDK_CONTROL_MASK) {
+				return false;											
+			}
+			
+			on_open_btn_clicked ();
+			return true;
+			
+		// Close a file
+		case GDK_KEY_w:
+			if ((event->state &
+				(GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) != 
+														GDK_CONTROL_MASK) {
+				return false;											
+			}
+			
+			on_close_btn_clicked ();
+			return true;
+			
+		// Add new tab
+		case GDK_KEY_t:
+			if ((event->state &
+				(GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) != 
+														GDK_CONTROL_MASK) {
+				return false;											
+			}
+			
+			m_tabpageview.appendPage ("Document");
+			return true;
+			
+		// go to next tab
+		case GDK_KEY_Tab:
+			if ((event->state &
+				(GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) != 
+														GDK_CONTROL_MASK) {
+				return false;											
+			}
+			
+			if (m_tabpageview.getCurrentIndex () == (m_tabpageview.get_n_pages () - 1)) {
+				m_tabpageview.set_current_page (0);
+			} else {
+				m_tabpageview.next_page ();
+			}
+			
+			return true;
+			
+		// Bookmark/Unbookmark
+		case GDK_KEY_b:
+			if ((event->state &
+				(GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) != 
+														GDK_CONTROL_MASK) {
+				return false;											
+			}
+			
+			check = static_cast<Gtk::CheckButton*>
+				           (m_main_toolbar.getMarkItem ().get_child ());
+			if (check->get_active ()) {
+				check->set_active (false);
+			} else {
+				check->set_active (true);
+			}
+			
+			return true;
+			
+		// Find a text
+		case GDK_KEY_f:
+			if ((event->state &
+				(GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) != 
+														GDK_CONTROL_MASK) {
+				return false;											
+			}
+			
+			if (!show_find) {
+				m_findview.show_all ();
+				show_find = true;
+			} else {
+				m_findview.hide ();
+				show_find = false;
+			}
+			
+			return true;
+		
+		// Scroll up 
+		case GDK_KEY_Up:
+			if (!pageview->m_document.get ()) {
+				return false;
+			}
+			pageview->getImageView ().scrollUp ();
+			return true;
+		
+		// Scroll down	
+		case GDK_KEY_Down:
+			if (!pageview->m_document.get ()) {
+				return false;
+			}
+			pageview->getImageView ().scrollDown ();
+			return true;
+		
+		// Scroll left	
+		case GDK_KEY_Left:
+			if (!pageview->m_document.get ()) {
+				return false;
+			}
+			pageview->getImageView ().scrollLeft ();
+			return true;
+			
+		// Scroll right
+		case GDK_KEY_Right:
+			if (!pageview->m_document.get ()) {
+				return false;
+			}
+			pageview->getImageView ().scrollRight ();
+			return true;
+		
+		// Previous page		
+		case GDK_KEY_z:
+			if ((event->state &
+				(GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) != 
+														GDK_CONTROL_MASK) {
+				return false;											
+			}
+		
+			if (!pageview->m_document.get ()) {
+				return false;
+			}
+			on_prev_btn_clicked ();
+			return true;
+		
+		// Next page
+		case GDK_KEY_x:
+			if ((event->state &
+				(GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) != 
+														GDK_CONTROL_MASK) {
+				return false;											
+			}
+		
+			if (!pageview->m_document.get ()) {
+				return false;
+			}
+			
+			on_next_btn_clicked ();
+			return true;
+		
+		// Zoom out	
+		case GDK_KEY_KP_Subtract:
+			if ((event->state &
+				(GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) != 
+														GDK_CONTROL_MASK) {
+				return false;											
+			}
+			
+			if (!pageview->m_document.get ()) {
+				return false;
+			}
+			on_zoomout_btn_clicked ();
+			return true;
+		
+		// Zoom in		
+		case GDK_KEY_KP_Add:
+			if ((event->state &
+				(GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) != 
+														GDK_CONTROL_MASK) {
+				return false;											
+			}
+		
+			if (!pageview->m_document.get ()) {
+				return false;
+			}
+			
+			on_zoomin_btn_clicked ();
+			return true;
+		
+		// Full screen	
+		case GDK_KEY_F11:
+			go_fullscreen ();
+			return true;
+		
+		// Normal screen	
+		case GDK_KEY_Escape:
+			go_unfullscreen ();
+			return true;
+			
+		default:
+			//std::cout << event->keyval << "\n";
+			break;
+	}
+	
+	return false;
 }

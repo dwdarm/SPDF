@@ -75,7 +75,7 @@ spdf::PDFPage::render (double scale)
 	return retVal;
 }
 
-std::string 
+spdf::UString
 spdf::PDFPage::searchText (Rect &rect, double scale)
 {
 	TextOutputDev *tod = NULL;
@@ -87,7 +87,7 @@ spdf::PDFPage::searchText (Rect &rect, double scale)
 	double yMin = rect.y; 
 	double xMax = rect.width;
 	double yMax = rect.height;
-	std::string retVal;
+	spdf::UString retVal;
 	
 	tod = new TextOutputDev (NULL, gTrue, 0.0, gFalse, gFalse);
 	m_poppler_page->getDoc ()->displayPage(tod, getIndex ()+1,
@@ -97,11 +97,61 @@ spdf::PDFPage::searchText (Rect &rect, double scale)
     text = text_page->getText(xMin, yMin, xMax, yMax);
     
     if (text) {
-		retVal = text->getCString ();
+		retVal = spdf::UString (text->getCString (), text->getLength ());
 	}
 	
     text_page->decRefCnt();
     delete (tod);
+	
+	return retVal;
+}
+
+spdf::Rect 
+spdf::PDFPage::searchRect (Rect &rect, std::string &text, double scale, PageSearchDirection dir)
+{
+	TextOutputDev *tod = NULL;
+	TextPage *text_page = NULL;
+	Unicode *utext = NULL;
+	double xhdi = 72.0 * scale;
+	double yhdi = 72.0 * scale;
+	double xMin = rect.x; 
+	double yMin = rect.y; 
+	double xMax = rect.width + rect.x;
+	double yMax = rect.height + rect.y;
+	Rect retVal = {0, 0, 0, 0};
+	bool backward;
+	bool result;
+	
+	utext = new Unicode[text.length ()];
+	for (int i = 0; i < text.length (); i++) {
+		utext[i] = text[i];
+	}
+	
+	tod = new TextOutputDev (NULL, gTrue, 0.0, gFalse, gFalse);
+	m_poppler_page->getDoc ()->displayPage(tod, getIndex ()+1,
+                            xhdi, yhdi, 0, gFalse, gFalse, gFalse, NULL,
+                            NULL, NULL, NULL, gFalse);
+    text_page = tod->takeText();
+    
+    if (dir == SEARCH_DIRECTION_NEXT) {
+		backward = false;
+	} else {
+		backward = true;
+	}
+	
+	result = text_page->findText (utext, text.length (), gFalse, gTrue, gFalse, gFalse, 
+				   gTrue, backward, gFalse, &xMin, &yMin, &xMax, &yMax);
+				   
+	if (result) {
+		retVal.x = (int) xMin;
+		retVal.y = (int) yMin;
+		retVal.width = (int) xMax - retVal.x;
+		retVal.height = (int) yMax - retVal.y;
+	}
+    
+    text_page->decRefCnt();
+    delete (tod);
+    delete [] (utext);
 	
 	return retVal;
 }

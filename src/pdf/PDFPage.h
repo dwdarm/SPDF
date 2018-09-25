@@ -34,7 +34,8 @@ namespace spdf {
 			PDFPage ();
 			~PDFPage ();
 			Image *render (double scale);
-			std::string searchText (Rect &rect, double scale);
+			UString searchText (Rect &rect, double scale);
+			Rect searchRect (Rect &rect, std::string &text, double scale, PageSearchDirection dir);
 			std::vector<Rect> searchRect (std::string &text, double scale);
 			std::vector<Rect> getSelectionRegion (PageSelectionStyle style, Rect &rect, double scale);
 			std::string getSelectionText (PageSelectionStyle style, Rect &rect, double scale);

@@ -32,8 +32,8 @@ spdf::DocumentOutline::setRoot (std::vector<spdf::DocumentOutlineItem> &root)
 
 // DocumentOutlineItem class definition
 
-spdf::DocumentOutlineItem::DocumentOutlineItem (std::string &&title, 
-			  int index, std::vector<spdf::DocumentOutlineItem> &&child)
+spdf::DocumentOutlineItem::DocumentOutlineItem (spdf::UString &title, 
+			  int index, std::vector<spdf::DocumentOutlineItem> &child)
 {
 	m_title = title;
 	m_index = index;
@@ -52,7 +52,7 @@ spdf::DocumentOutlineItem::getIndex ()
 	return m_index;
 }
 
-std::string &
+spdf::UString &
 spdf::DocumentOutlineItem::getTitle ()
 {
 	return m_title;

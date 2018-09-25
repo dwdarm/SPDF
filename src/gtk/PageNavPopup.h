@@ -32,7 +32,6 @@ namespace spdf {
 			Gtk::MenuItem &getLastMenuItem ();
 			Gtk::MenuItem &getZoomoutMenuItem ();
 			Gtk::MenuItem &getZoominMenuItem ();
-			Gtk::CheckMenuItem &getMarkMenuItem ();
 			
 		private:
 			Gtk::MenuItem m_copy_item;
@@ -42,11 +41,9 @@ namespace spdf {
 			Gtk::MenuItem m_last_item;
 			Gtk::MenuItem m_zoomout_item;
 			Gtk::MenuItem m_zoomin_item;
-			Gtk::CheckMenuItem m_mark_item;
 			
 			Gtk::SeparatorMenuItem m_sep1;
 			Gtk::SeparatorMenuItem m_sep2;
-			Gtk::SeparatorMenuItem m_sep3;
 			
 	};
 }

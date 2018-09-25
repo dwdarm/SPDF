@@ -20,6 +20,8 @@
 #include "Image.h"
 #endif
 
+#include "UString.h"
+
 #include <vector>
 #include <string>
 
@@ -34,6 +36,11 @@ namespace spdf {
 		SELECTION_STYLE_WORD,
 		SELECTION_STYLE_LINE
 	};
+	
+	enum PageSearchDirection {
+		SEARCH_DIRECTION_NEXT,
+		SEARCH_DIRECTION_PREVIOUS
+	};
 
 	class DocumentPage {
 		
@@ -41,7 +48,8 @@ namespace spdf {
 			DocumentPage ();
 			virtual ~DocumentPage ();
 			virtual Image *render (double scale) = 0;
-			virtual std::string searchText (Rect &rect, double scale);
+			virtual UString searchText (Rect &rect, double scale);
+			virtual Rect searchRect (Rect &rect, std::string &text, double scale, PageSearchDirection dir);
 			virtual std::vector<Rect> searchRect (std::string &text, double scale);
 			virtual std::vector<Rect> getSelectionRegion (PageSelectionStyle style, Rect &rect, double scale);
 			virtual std::string getSelectionText (PageSelectionStyle style, Rect &rect, double scale);

@@ -25,6 +25,7 @@ const char defcssdata[] {
 
 spdf::ImageView::ImageView () : Gtk::ScrolledWindow ()
 {
+	m_hadj = get_hadjustment ();
 	m_vadj = get_vadjustment ();
 	
 	cssprovider = Gtk::CssProvider::create ();
@@ -310,6 +311,30 @@ spdf::ImageView::refresh ()
 														   m_image_row);
 	                         
 	m_image.set (m_pixbuf);       
+}
+
+void 
+spdf::ImageView::scrollDown ()
+{
+	m_vadj->set_value (m_vadj->get_value () + 10);
+}
+
+void 
+spdf::ImageView::scrollLeft ()
+{
+	m_hadj->set_value (m_hadj->get_value () - 10);
+}
+
+void 
+spdf::ImageView::scrollRight ()
+{
+	m_hadj->set_value (m_hadj->get_value () + 10);
+}
+
+void 
+spdf::ImageView::scrollUp ()
+{
+	m_vadj->set_value (m_vadj->get_value () - 10);
 }
 
 void 

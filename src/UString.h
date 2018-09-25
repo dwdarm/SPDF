@@ -12,17 +12,35 @@
  * GNU General Public License for more details.
  *
  */
+ 
+#ifndef USTRING_H
+#define USTRING_H
 
-#include <glibmm/ustring.h>
-#include "MainWindow.h"
+#include <string>
 
-spdf::MainWindow::MainWindow ()
-{
-	m_main_box.set_orientation (Gtk::ORIENTATION_VERTICAL);
-	
-	m_main_box.pack_start (m_main_toolbar, 0, 0);
-	m_main_box.pack_start (m_tabpageview, 1, 1);
-	m_main_box.pack_start (m_findview, 0, 0);
-	
-	add (m_main_box);
+namespace spdf {
+	class UString {
+		public:
+			UString ();
+			UString (const char *str);
+			UString (const char *str, int size);
+			UString (unsigned int *data, int size);
+			UString (const UString &obj);
+			
+			~UString ();
+			
+			UString& operator=(const UString &str);
+			UString& operator=(const char *str);
+			
+			int byte_size () const;
+			char *data () const;
+			int size () const;
+			
+		private:
+			char *m_data;
+			int m_size;
+			int m_bsize;
+	};
 }
+
+#endif
