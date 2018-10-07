@@ -35,10 +35,23 @@ namespace spdf {
 		private:
 			std::string m_path;
 			std::map<std::string, std::string> m_configs;
-			PageNavPopup m_page_nav_popup;
+			
 			bool m_selecting;
 			Rect m_selected_rect;
 			std::vector<Rect> m_selected_regs;
+			
+			void open_document (Glib::ustring &path, spdf::PageView &pageview);
+			void load_document (spdf::PageView &pageview);
+			void close_document (spdf::PageView &pageview);
+			
+			void go_to_page (spdf::PageView &pageview, int index);
+			void go_to_next_page (spdf::PageView &pageview);
+			void go_to_prev_page (spdf::PageView &pageview);
+			void zoom_in_page (spdf::PageView &pageview, double f);
+			void zoom_out_page (spdf::PageView &pageview, double f);
+			
+			void mark_current_page (spdf::PageView &pageview);
+			
 			void go_fullscreen ();
 			void go_unfullscreen ();
 			void draw_page (spdf::PageView &pageview);
@@ -49,6 +62,9 @@ namespace spdf {
 													Gtk::TreeIter &iter);
 			void update_toolbar (spdf::PageView &pageview);
 			void find_text (spdf::PageView &pageview, std::string &str);
+			
+			void draw_selection_page (spdf::PageView &pageview);
+			void copy_text_selection_page (spdf::PageView &pageview);
 			
 		//slot:
 			void on_open_btn_clicked ();
@@ -70,12 +86,10 @@ namespace spdf {
 			void on_tab_page_changed (Gtk::Widget* page, guint page_num);
 			void on_tab_page_added (Gtk::Widget* page, guint page_num);
 			
-			void on_outline_sel_changed ();
-			void on_bookmark_sel_changed ();
+			bool on_outline_sel_changed (GdkEventButton *event);
+			bool on_bookmark_sel_changed (GdkEventButton *event);
 			
 			void on_find_entry_text_changed ();
-			
-			void on_open_dialog_resp (int id, Gtk::FileChooser &chooser);
 			
 			bool on_timeout_msg ();
 			bool on_timeout_sel ();

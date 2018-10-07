@@ -42,6 +42,7 @@ namespace spdf {
 			MainToolbar m_main_toolbar;
 			TabPageView m_tabpageview;
 			FindView m_findview;
+			PageNavPopup m_page_nav_popup;
 	};
 }
 

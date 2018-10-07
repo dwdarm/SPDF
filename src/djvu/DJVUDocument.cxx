@@ -69,7 +69,7 @@ spdf::DJVUDocument::~DJVUDocument ()
 }
 
 spdf::DJVUDocument *
-spdf::DJVUDocument::openDocument (const std::string &filename)
+spdf::DJVUDocument::openDocument (const UString &filename)
 {
 	spdf::DJVUDocument *retVal = NULL;
 	ddjvu_document_t *document = NULL;
@@ -94,8 +94,8 @@ spdf::DJVUDocument::openDocument (const std::string &filename)
 	retVal->m_is_loaded = true;
 	retVal->m_pages = ddjvu_document_get_pagenum (document);
 	retVal->m_type = DJVU;
-	retVal->m_title = std::string (filename).substr
-						 (std::string (filename).find_last_of("/\\")+1);
+	retVal->m_title = std::string (filename.data ()).substr
+		 (std::string (filename.data ()).find_last_of("/\\")+1).data ();
 	
 	m_count++;
 	

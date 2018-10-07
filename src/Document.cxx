@@ -50,16 +50,28 @@ spdf::Document::getPages () const
 	return m_pages;
 }
 
+spdf::DocumentPageLayout 
+spdf::Document::getPageLayout () const
+{
+	return PAGE_LAYOUT_UNKNOWN; 
+}
+
 spdf::DocumentType
 spdf::Document::getType () const
 {
 	return m_type;
 }
 
-std::string
+spdf::UString
 spdf::Document::getTitle () const
 {
-	return m_title;;
+	return m_title;
+}
+
+bool 
+spdf::Document::isEncrypted() const
+{
+	return false;
 }
 
 bool

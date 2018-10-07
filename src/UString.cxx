@@ -17,7 +17,7 @@
 #include <cstring>
 
 static int
-ustring_ucs4_to_utf8 (char *buff, unsigned int *data, int len, int *c_len) 
+ustring_ucs4_to_utf8 (char *buff, const unsigned int *data, int len, int *c_len) 
 {
 	int p = 0;
 	
@@ -88,6 +88,7 @@ spdf::UString::UString ()
 {	
 	m_bsize = 0;
 	m_size = 0;
+	m_capacity = 0;
 	m_data = NULL;
 }
 
@@ -95,7 +96,8 @@ spdf::UString::UString (const char *str)
 {
 	m_bsize = strlen (str);
 	m_size = ustring_get_length_utf8 (str, m_bsize);
-	m_data = new char[m_bsize + 2];
+	m_capacity = m_bsize + 2;
+	m_data = new char[m_capacity];
 	
 	strcpy (m_data, str);
 	
@@ -107,7 +109,8 @@ spdf::UString::UString (const char *str, int size)
 {
 	m_bsize = size;
 	m_size = ustring_get_length_utf8 (str, m_bsize);
-	m_data = new char[m_bsize + 2];
+	m_capacity = m_bsize + 2;
+	m_data = new char[m_capacity];
 	
 	memcpy (m_data, str, m_bsize);
 	
@@ -115,9 +118,10 @@ spdf::UString::UString (const char *str, int size)
 	m_data[m_bsize+1] = 0x00;
 }
 
-spdf::UString::UString (unsigned int *data, int size)
+spdf::UString::UString (const unsigned int *data, int size)
 {
-	m_data = new char[(size*4) + 2];
+	m_capacity = (size * 4) + 2;
+	m_data = new char[m_capacity];
 	m_bsize = ustring_ucs4_to_utf8 (m_data, data, size, &m_size);
 	
 	m_data[m_bsize] = 0x00;
@@ -130,9 +134,11 @@ spdf::UString::UString (const UString &obj)
 		
 		m_size = obj.m_size;
 		m_bsize = obj.m_bsize;
+		m_capacity = obj.m_capacity;
+	    m_data = NULL;
 		
 		if (obj.m_data) {
-			m_data = new char[m_bsize + 2];
+			m_data = new char[m_capacity];
 			memcpy (m_data, obj.m_data, m_bsize);
 			m_data[m_bsize] = 0x00;
 			m_data[m_bsize+1] = 0x00;
@@ -154,13 +160,15 @@ spdf::UString::operator=(const spdf::UString &str)
 		
 		if (m_data) {
 			delete [] m_data;
+			m_data = NULL;
 		}
 		
 		m_size = str.m_size;
 		m_bsize = str.m_bsize;
+		m_capacity = str.m_capacity;
 		
 		if (str.m_data) {
-			m_data = new char[m_bsize + 2];
+			m_data = new char[m_capacity];
 			memcpy (m_data, str.m_data, m_bsize);
 			m_data[m_bsize] = 0x00;
 			m_data[m_bsize+1] = 0x00;
@@ -177,11 +185,13 @@ spdf::UString::operator=(const char *str)
 		
 		if (m_data) {
 			delete [] m_data;
+			m_data = NULL;
 		}
 		
 		m_bsize = strlen (str);
 		m_size = ustring_get_length_utf8 (str, m_bsize);
-		m_data = new char[m_bsize + 2];
+		m_capacity = m_bsize + 2;
+		m_data = new char[m_capacity];
 	
 		strcpy (m_data, str);
 	

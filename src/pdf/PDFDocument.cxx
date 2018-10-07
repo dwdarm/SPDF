@@ -13,6 +13,7 @@
  *
  */
 
+#include <poppler/Catalog.h>
 #include <poppler/PDFDoc.h>
 #include <poppler/Page.h>
 #include <poppler/Outline.h>
@@ -20,6 +21,7 @@
 #include <poppler/goo/GooList.h>
 #include <poppler/SplashOutputDev.h>
 
+#include <string>
 #include <iostream>
 #include <stdio.h>
 
@@ -77,7 +79,7 @@ get_page_index_from_link_action (Catalog *catalog, LinkAction *action)
 	return retVal;
 }
 
-std::vector<spdf::DocumentOutlineItem> 
+static std::vector<spdf::DocumentOutlineItem> 
 outline_get_child (Catalog *catalog, OutlineItem *pitem)
 {
 	LinkAction *action = NULL;
@@ -110,8 +112,8 @@ outline_get_child (Catalog *catalog, OutlineItem *pitem)
 }
 
 spdf::PDFDocument *
-spdf::PDFDocument::openDocument (const std::string &filename, 
-			const std::string &user_pass, const std::string &owner_pass) 
+spdf::PDFDocument::openDocument (const spdf::UString &filename, 
+	const spdf::UString &user_pass, const spdf::UString &owner_pass, spdf::DocumentError *err) 
 {
 	spdf::PDFDocument *retVal = NULL;
 	PDFDoc *poppler_document = NULL;
@@ -131,6 +133,12 @@ spdf::PDFDocument::openDocument (const std::string &filename,
 		retVal->m_is_loaded = true;
 		retVal->m_type = PDF;
 		retVal->m_pages = poppler_document->getNumPages();
+	} else {
+		if (err) {
+			err->code = poppler_document->getErrorCode ();
+			err->type = PDF;
+			err->msg = spdf::UString ("Document file could not be opened");
+		}
 	}
 	
 	return retVal;
@@ -159,17 +167,42 @@ spdf::PDFDocument::createPage (int index)
 	return retVal;
 }
 
-std::string 
+spdf::DocumentPageLayout 
+spdf::PDFDocument::getPageLayout () const
+{
+	switch (m_poppler_document->getCatalog ()->getPageLayout ()) {
+		case Catalog::pageLayoutNone:
+			return PAGE_LAYOUT_UNKNOWN;
+		case Catalog::pageLayoutSinglePage:
+			return PAGE_LAYOUT_SINGLE_PAGE;
+		case Catalog::pageLayoutOneColumn:
+			return PAGE_LAYOUT_ONE_COLUMN;
+		case Catalog::pageLayoutTwoColumnLeft:
+			return PAGE_LAYOUT_TWO_COLUMN_LEFT;
+		case Catalog::pageLayoutTwoColumnRight:
+			return PAGE_LAYOUT_TWO_COLUMN_RIGHT;
+		case Catalog::pageLayoutTwoPageLeft:
+			return PAGE_LAYOUT_TWO_PAGE_LEFT;
+		case Catalog::pageLayoutTwoPageRight:
+			return PAGE_LAYOUT_TWO_PAGE_RIGHT;
+		case Catalog::pageLayoutNull:
+			return PAGE_LAYOUT_NULL;
+		default:
+			return PAGE_LAYOUT_UNKNOWN;
+	}
+}
+
+spdf::UString
 spdf::PDFDocument::getTitle () const
 {
-	std::string retVal;
+	UString retVal;
 	GooString *title = NULL;
 	char *ctitle = NULL;
 	
 	title = m_poppler_document->getFileName ();
 	ctitle = title->getCString ();
 	retVal = std::string (ctitle).substr
-						   (std::string (ctitle).find_last_of("/\\")+1);
+				   (std::string (ctitle).find_last_of("/\\")+1).data ();
 	
 	return retVal;
 }
@@ -208,4 +241,10 @@ spdf::PDFDocument::getOutline () const
 		}
 	}
 	return retVal;
+}
+
+bool 
+spdf::PDFDocument::isEncrypted() const
+{
+	return m_poppler_document->isEncrypted ();
 }

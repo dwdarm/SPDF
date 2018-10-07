@@ -16,16 +16,17 @@
 #ifndef DOCUMENTCREATOR_H
 #define DOCUMENTCREATOR_H
 
-#include <string>
-
+class UString;
 class Document;
+class DocumentError;
 
 namespace spdf {
 	class DocumentCreator {
 		public:
-			Document *openDocument (const std::string &filename, 
-						  const std::string &user_pass = std::string (), 
-						const std::string &owner_pass = std::string ());
+			Document *openDocument (const UString &filename, 
+						          const UString &user_pass = UString (), 
+						        const UString &owner_pass = UString (),
+						        DocumentError *err = NULL);
 						
 			static DocumentCreator *m_instance;
 			static DocumentCreator *instance ();

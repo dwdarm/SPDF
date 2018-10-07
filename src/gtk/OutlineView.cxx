@@ -21,6 +21,7 @@ spdf::OutlineView::OutlineView () : Gtk::ScrolledWindow ()
 	Gtk::CellRendererText *m_text_renderer = NULL;
 	
 	m_treeview.set_headers_visible (false);
+	m_treeview.set_enable_search (false);
 	m_treeview.append_column ("Title", m_columns.m_col_title);
 	
 	m_ref_treestore = Gtk::TreeStore::create (m_columns);
@@ -34,7 +35,9 @@ spdf::OutlineView::OutlineView () : Gtk::ScrolledWindow ()
 	
 	m_size = 0;
 	
-	add (m_treeview);
+	m_event_box.add (m_treeview);
+	
+	add (m_event_box);
 }
 
 Gtk::TreeIter
@@ -70,6 +73,12 @@ spdf::OutlineView::clear ()
 {
 	m_ref_treestore->clear ();
 	m_size = 0;
+}
+
+Gtk::EventBox &
+spdf::OutlineView::getEventBox ()
+{
+	return m_event_box;
 }
 
 int 

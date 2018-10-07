@@ -21,17 +21,18 @@
 // TabHeaderView definition
 spdf::TabHeaderView::TabHeaderView () : Gtk::Box ()
 {
-	//m_tab_lbl.set_hexpand (false);
 	m_tab_lbl.set_width_chars (12);
 	m_tab_lbl.set_max_width_chars (16);	
 	m_tab_lbl.set_text ("Document");
 	m_tab_lbl.set_ellipsize (Pango::ELLIPSIZE_END);
 	m_tab_lbl.set_tooltip_text (m_tab_lbl.get_text ());
 	
-	m_tab_close_btn.set_image_from_icon_name 
-	                            ("window-close", Gtk::ICON_SIZE_BUTTON);
+	m_tab_close_img.set_from_icon_name ("window-close", Gtk::IconSize (Gtk::ICON_SIZE_SMALL_TOOLBAR));
+	//m_tab_close_btn.set_icon_widget (m_tab_close_img);
+	//m_tab_close_btn.set_homogeneous (false);
+	m_tab_close_btn.add (m_tab_close_img);
+	//m_tab_close_btn.set_expand (false);
 	m_tab_close_btn.set_tooltip_text ("Close tab");
-	
 	
 	pack_start (m_tab_lbl, false, false, 5);
 	pack_start (m_tab_close_btn, false, false, 5);
@@ -39,7 +40,7 @@ spdf::TabHeaderView::TabHeaderView () : Gtk::Box ()
 	show_all ();
 }
 
-Gtk::Button &
+Gtk::EventBox &
 spdf::TabHeaderView::getButton ()
 {
 	return m_tab_close_btn;
@@ -70,7 +71,7 @@ spdf::PageView::PageView () : Gtk::Paned ()
 	add2 (m_imageview);
 	set_wide_handle ();
 	
-	m_tabheaderview.getButton ().signal_clicked ().connect 
+	m_tabheaderview.getButton ().signal_button_press_event ().connect 
 				   (sigc::mem_fun (*this, &PageView::on_tab_close_btn));
 				   
 	spdf::PageView::count_id++;
@@ -114,9 +115,15 @@ spdf::PageView::showSidebarView ()
 	show_all ();
 }
 
-void
-spdf::PageView::on_tab_close_btn ()
+bool
+spdf::PageView::on_tab_close_btn (GdkEventButton *event)
 {
-	spdf::TabPageView *parent = (spdf::TabPageView*)this->get_parent ();
-	parent->closePage (this);
+	spdf::TabPageView *parent = NULL;
+	
+	if (event->button == 1) {
+		parent = (spdf::TabPageView*)this->get_parent ();
+		parent->closePage (this);
+	}
+	
+	return true;
 }

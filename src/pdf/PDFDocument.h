@@ -24,8 +24,6 @@
 #include "PDFPage.h"
 #endif
 
-#include <string>
-
 class PDFDoc;
 
 namespace spdf {
@@ -35,12 +33,15 @@ namespace spdf {
 		public:
 			~PDFDocument ();
 			DocumentPage *createPage (int index);
-			std::string getTitle () const;
 			DocumentOutline *getOutline () const;
+			DocumentPageLayout getPageLayout () const;
+			UString getTitle () const;
+			bool isEncrypted() const;
 			
-			static PDFDocument *openDocument (const std::string &filename, 
-						  const std::string &user_pass = std::string (), 
-						const std::string &owner_pass = std::string ());
+			static PDFDocument *openDocument (const UString &filename, 
+						          const UString &user_pass = UString (), 
+						        const UString &owner_pass = UString (),
+						        DocumentError *err = NULL);
 			
 		private:
 			PDFDoc *m_poppler_document;

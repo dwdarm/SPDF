@@ -21,25 +21,34 @@
 namespace spdf {
 	class UString {
 		public:
-			UString ();
-			UString (const char *str);
-			UString (const char *str, int size);
-			UString (unsigned int *data, int size);
-			UString (const UString &obj);
+			// Constructor
+			UString (); 
+			UString (const char *str); 
+			UString (const char *str, int size); 
+			UString (const unsigned int *data, int size); 
+			UString (const UString &obj); 
 			
-			~UString ();
+			// Destructor
+			~UString (); 
 			
-			UString& operator=(const UString &str);
-			UString& operator=(const char *str);
+			UString& operator=(const UString &str); 
+			UString& operator=(const char *str); 
 			
-			int byte_size () const;
-			char *data () const;
-			int size () const;
+			//void append (const UString &str);
+			//void append (const unsigned int *u, int s);
+			//void append (unsigned int u);
+			//void append (const char *c);
+			//void append (char c);
+			
+			int byte_size () const; 
+			char *data () const; 
+			int size () const; 
 			
 		private:
 			char *m_data;
 			int m_size;
 			int m_bsize;
+			int m_capacity;
 	};
 }
 

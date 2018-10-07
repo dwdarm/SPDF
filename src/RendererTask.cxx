@@ -73,7 +73,7 @@ spdf::RendererTask::onStart ()
 	
 	t = clock () - t;
 	s = ((float)t)/CLOCKS_PER_SEC;
-	std::cout << m_document->getId () << "-" << m_document->getTitle () << " = ";
+	std::cout << m_document->getId () << "-" << m_document->getTitle ().data () << " = ";
 	std::cout << "rendered in " << s << " seconds\n";
 	
 	image->convertToARGB32 ();

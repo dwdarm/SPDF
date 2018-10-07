@@ -19,7 +19,8 @@
 #include <gtkmm/paned.h>
 #include <gtkmm/box.h>
 #include <gtkmm/label.h>
-#include <gtkmm/button.h>
+#include <gtkmm/eventbox.h>
+#include <gtkmm/image.h>
 
 #ifndef SIDEBARVIEW_H
 #include "SidebarView.h"
@@ -40,13 +41,14 @@ namespace spdf {
 	class TabHeaderView : public Gtk::Box {
 		public:
 			TabHeaderView ();
-			Gtk::Button &getButton ();
+			Gtk::EventBox &getButton ();
 			Gtk::Label &getLabel ();
 			void setTitle (Glib::ustring &title);
 			
 		private:
 			Gtk::Label m_tab_lbl;
-			Gtk::Button m_tab_close_btn;
+			Gtk::Image m_tab_close_img;
+			Gtk::EventBox m_tab_close_btn;
 			
 	};
 	
@@ -59,6 +61,7 @@ namespace spdf {
 			void hideSidebarView ();
 			void showSidebarView ();
 			
+			// Document and page attribute
 			std::shared_ptr<Document> m_document;
 			int m_id;
 			int m_index;
@@ -73,7 +76,7 @@ namespace spdf {
 			TabHeaderView m_tabheaderview;
 			
 		// slot:
-			void on_tab_close_btn ();
+			bool on_tab_close_btn (GdkEventButton *event);
 	};
 }
 

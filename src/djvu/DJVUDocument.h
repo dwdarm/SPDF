@@ -36,7 +36,7 @@ namespace spdf {
 		    ~DJVUDocument ();
 			DocumentPage *createPage (int index);
 			
-			static DJVUDocument *openDocument (const std::string &filename);
+			static DJVUDocument *openDocument (const UString &filename);
 			static int m_count;
 			static ddjvu_context_t *m_context;
 			

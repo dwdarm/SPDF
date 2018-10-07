@@ -14,7 +14,6 @@
  */
 
 #include "DJVUPage.h"
-#include <iostream>
 #include <cstring>
 
 spdf::DJVUPage::DJVUPage () : spdf::DocumentPage ()
@@ -67,7 +66,6 @@ spdf::DJVUPage::render (double scale)
 											(char*) retVal->getData ());	
 											 					 
 	if (res == 0) {
-		std::cout << "ERROR\n";	
 		delete (retVal);
 		retVal = NULL;
 	} 

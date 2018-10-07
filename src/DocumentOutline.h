@@ -18,7 +18,10 @@
 
 #include <string>
 #include <vector>
+
+#ifndef USTRING_H
 #include "UString.h"
+#endif
 
 namespace spdf {
 	

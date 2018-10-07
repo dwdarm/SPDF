@@ -24,6 +24,10 @@
 #include "DocumentPage.h"
 #endif
 
+#ifndef USTRING_H
+#include "UString.h"
+#endif
+
 #include <string>
 
 namespace spdf {
@@ -34,6 +38,24 @@ namespace spdf {
 		DJVU
 	};
 	
+	enum DocumentPageLayout {
+		PAGE_LAYOUT_UNKNOWN = 0,
+		PAGE_LAYOUT_SINGLE_PAGE,
+		PAGE_LAYOUT_ONE_COLUMN,
+		PAGE_LAYOUT_TWO_COLUMN_LEFT,
+		PAGE_LAYOUT_TWO_COLUMN_RIGHT,
+		PAGE_LAYOUT_TWO_PAGE_LEFT,
+		PAGE_LAYOUT_TWO_PAGE_RIGHT,
+		PAGE_LAYOUT_NULL
+	};
+	
+	class DocumentError {
+		public:
+			int code;
+			DocumentType type;
+			UString msg;
+	};
+	
 	class Document {
 		public:
 			Document ();
@@ -42,12 +64,14 @@ namespace spdf {
 			int getId () const;
 			virtual DocumentOutline *getOutline () const;
 			virtual int getPages () const;
+			virtual DocumentPageLayout getPageLayout () const;
 			virtual DocumentType getType () const;
-			virtual std::string getTitle () const;
+			virtual UString getTitle () const;
+			virtual bool isEncrypted() const;
 			virtual bool isLoaded () const;
 			
 		protected:
-			std::string m_title;
+			UString m_title;
 			bool m_is_loaded;
 			int m_pages;
 			DocumentType m_type;

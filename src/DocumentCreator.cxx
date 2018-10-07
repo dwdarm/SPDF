@@ -22,6 +22,7 @@
 #endif
 
 #include "DocumentCreator.h"
+#include <cstdio>
 
 spdf::DocumentCreator *spdf::DocumentCreator::m_instance = NULL;
 
@@ -36,16 +37,26 @@ spdf::DocumentCreator::instance ()
 }
 
 spdf::Document *
-spdf::DocumentCreator::openDocument (const std::string &filename, 
-			const std::string &user_pass, const std::string &owner_pass)
+spdf::DocumentCreator::openDocument (const UString &filename, 
+	 const UString &user_pass, const UString &owner_pass, DocumentError *err)
 {
 	Document *retVal = NULL;
+	FILE *f = NULL;
+	char b [16];
+	
+	f = fopen (filename.data (), "rb");
+	if (!f) {
+		return retVal;
+	}
+	
+	fread (b, 1, 16, f);
+	fclose (f);
 	
 	// PDF Support
-	if (std::string (filename, filename.size ()-3, 3) == "pdf") {
-		retVal = spdf::PDFDocument::openDocument (filename);
+	if ((b[0] == '%') && (b[1] == 'P') && (b[2] == 'D') && (b[3] == 'F')) {
+		retVal = spdf::PDFDocument::openDocument (filename, user_pass, owner_pass, err);
 	// DJVU Support
-	} else if (std::string (filename, filename.size ()-4, 4) == "djvu") {
+	} else if ((b[0] == 'A') && (b[1] == 'T') && (b[2] == '&') && (b[3] == 'T')) {
 		retVal = spdf::DJVUDocument::openDocument (filename);
 	}
 	
