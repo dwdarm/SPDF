@@ -47,6 +47,7 @@ namespace spdf {
 			int decrementThreadWorker ();
 			int incrementThreadWorker ();
 			int init (int numberOfThread);
+			void size (int s);
 			
 			static TaskScheduler *instance ();
 			static TaskScheduler *m_instance;
@@ -54,6 +55,7 @@ namespace spdf {
 		private:
 			TaskScheduler ();
 			int m_init;
+			int m_size;
 			std::vector<RefThreadData> m_thread_data;
 			RefTaskQueue m_queue;
 	};

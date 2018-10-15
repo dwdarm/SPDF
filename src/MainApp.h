@@ -40,6 +40,8 @@ namespace spdf {
 			Rect m_selected_rect;
 			std::vector<Rect> m_selected_regs;
 			
+			void render_page (Document *doc, int page, double scale);
+			
 			void open_document (Glib::ustring &path, spdf::PageView &pageview);
 			void load_document (spdf::PageView &pageview);
 			void close_document (spdf::PageView &pageview);

@@ -181,6 +181,19 @@ spdf::MainApp::MainApp () : spdf::MainWindow ()
 }
 
 void 
+spdf::MainApp::render_page (Document *doc, int page, double scale)
+{
+	std::string key;
+	
+	// encoded = id-scale-index
+	key = std::to_string (doc->getId ()) 
+			              + "-" + std::to_string (scale)
+						  + "-" + std::to_string (page);
+	
+	spdf::TaskScheduler::instance ()->assign (new spdf::RendererTask (doc, page, scale, key));
+}
+
+void 
 spdf::MainApp::open_document (Glib::ustring &path, spdf::PageView &pageview)
 {
 	UString filename, upass, opass;
@@ -435,9 +448,8 @@ spdf::MainApp::draw_page (spdf::PageView &pageview)
 		return;
 	}
 	spdf::Cache::instance ()->unlock ();
-	spdf::TaskScheduler::instance ()->assign (new spdf::RendererTask 
-						(pageview.m_document.get (), pageview.m_index, 
-												pageview.m_scale, key));
+	
+	render_page (pageview.m_document.get (), pageview.m_index, pageview.m_scale);
 }
 
 // populate outline sidebar

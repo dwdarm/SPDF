@@ -45,6 +45,7 @@ spdf::TaskScheduler::TaskScheduler ()
 int 
 spdf::TaskScheduler::assign (spdf::Task *task)
 {
+	spdf::Task *temp = NULL;
 	int ret = 0;
 	
 	if (!m_init) {
@@ -52,6 +53,11 @@ spdf::TaskScheduler::assign (spdf::Task *task)
 	}
 	
 	m_queue_mutex.lock ();
+	while ((m_queue->size ()+1) > m_size) {
+		temp = m_queue->top ();
+		m_queue->pop ();
+		delete (temp);
+	}
 	m_queue->push (task);
 	m_queue_mutex.unlock ();
 	
@@ -121,6 +127,7 @@ spdf::TaskScheduler::init (int numberOfThread)
 	}
 	
 	m_init = 1;
+	m_size = 4;
 	
 	for (int i = 0; i < numberOfThread; i++) {
 		RefThreadData thread_data (new ThreadData);
@@ -132,6 +139,24 @@ spdf::TaskScheduler::init (int numberOfThread)
 	
 	ret = 1;
 	return ret;
+}
+
+void
+spdf::TaskScheduler::size (int s)
+{	
+	spdf::Task *task = NULL;
+	int t = 0;
+	
+	m_queue_mutex.lock ();
+	m_size = s;
+	t = m_queue->size ();
+	while (t > s) {
+		task = m_queue->top ();
+		m_queue->pop ();
+		delete (task);
+		t = m_queue->size ();
+	}
+	m_queue_mutex.unlock ();
 }
 
 static void 
