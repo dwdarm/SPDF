@@ -17,6 +17,7 @@
 
 spdf::PageNavPopup::PageNavPopup () 
 		: Gtk::Menu (),
+		  m_cons_mode_item ("Continous page"),
 	 	  m_copy_item ("Copy"),
 		  m_prev_item ("Previous page"),
 		  m_next_item ("Next page"),
@@ -25,17 +26,25 @@ spdf::PageNavPopup::PageNavPopup ()
 		  m_zoomout_item ("Zoom out"),
 		  m_zoomin_item ("Zoom in")
 {
-	append (m_copy_item);
+	append (m_cons_mode_item);
 	append (m_sep1);
+	append (m_copy_item);
+	append (m_sep2);
 	append (m_first_item);
 	append (m_prev_item);
 	append (m_next_item);
 	append (m_last_item);
-	append (m_sep2);
+	append (m_sep3);
 	append (m_zoomout_item);
 	append (m_zoomin_item);
 	
 	show_all ();
+}
+
+Gtk::CheckMenuItem &
+spdf::PageNavPopup::getConsModeMenuItem ()
+{
+	return m_cons_mode_item;
 }
 
 Gtk::MenuItem &

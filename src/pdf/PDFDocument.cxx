@@ -20,6 +20,7 @@
 #include <poppler/Link.h>
 #include <poppler/goo/GooList.h>
 #include <poppler/SplashOutputDev.h>
+#include <poppler/ErrorCodes.h>
 
 #include <string>
 #include <iostream>
@@ -111,6 +112,29 @@ outline_get_child (Catalog *catalog, OutlineItem *pitem)
 	return retVal;
 }
 
+static void 
+set_document_error (spdf::DocumentError *err, int code, spdf::DocumentType type)
+{
+	switch (code) {
+		case errOpenFile:
+			err->msg = "couldn't open the PDF file";
+			break;
+		case errBadCatalog:
+			err->msg = "couldn't read the page catalog";
+			break;
+		case errDamaged:
+			err->msg = "PDF file was damaged and couldn't repaired";
+			break;
+		case errEncrypted:
+			err->msg = "file was encrypted and password was incorrect or not supplied";
+			break;
+		default :
+			break;
+	}
+	err->code = code;
+	err->type = type;
+}
+
 spdf::PDFDocument *
 spdf::PDFDocument::openDocument (const spdf::UString &filename, 
 	const spdf::UString &user_pass, const spdf::UString &owner_pass, spdf::DocumentError *err) 
@@ -135,9 +159,7 @@ spdf::PDFDocument::openDocument (const spdf::UString &filename,
 		retVal->m_pages = poppler_document->getNumPages();
 	} else {
 		if (err) {
-			err->code = poppler_document->getErrorCode ();
-			err->type = PDF;
-			err->msg = spdf::UString ("Document file could not be opened");
+			set_document_error (err, poppler_document->getErrorCode (), PDF);
 		}
 	}
 	

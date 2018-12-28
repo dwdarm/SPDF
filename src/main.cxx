@@ -15,10 +15,35 @@
 
 #include "MainApp.h"
 
+static void
+on_activate (Glib::RefPtr<Gtk::Application>& app) 
+{
+	spdf::MainApp *main_app = new spdf::MainApp (app);
+}
+
+static void
+on_open_file (const std::vector<Glib::RefPtr<Gio::File>> &files, const Glib::ustring &hint, Glib::RefPtr<Gtk::Application>& app)
+{
+	spdf::MainApp *main_app;
+	Glib::ustring filename;
+	
+	for (auto it = files.cbegin (); it != files.cend (); it++) {
+		filename = (*it)->get_path ();
+		break;
+	}
+	
+	app->activate ();
+	
+	main_app = (spdf::MainApp*) app->get_active_window ();
+	main_app->load (filename);
+}
+
 int main (int argc, char **argv)
 {
-	auto app = Gtk::Application::create (argc, argv, "org.gtkmm.spdf.base");
-	spdf::MainApp myapp;
+	auto app = Gtk::Application::create("org.gtkmm.spdf.base", Gio::APPLICATION_HANDLES_OPEN);
 	
-	return app->run (myapp);
+	app->signal_activate ().connect (sigc::bind<Glib::RefPtr<Gtk::Application>&> (sigc::ptr_fun (on_activate), app));
+	app->signal_open ().connect (sigc::bind<Glib::RefPtr<Gtk::Application>&> (sigc::ptr_fun (on_open_file), app));
+	
+	return app->run(argc, argv);
 }

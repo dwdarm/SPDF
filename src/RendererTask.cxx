@@ -23,14 +23,15 @@
 #include "RendererTask.h"
 #include "Message.h"
 #include "MessageQueue.h"
+#include "TaskId.h"
 
-spdf::RendererTask::RendererTask (spdf::Document *document, int index, 
-										 double scale, std::string &key)
+spdf::RendererTask::RendererTask (spdf::Document *document, int index, double scale, std::string &key, void *user_data)
 {
 	m_document = document;
 	m_index = index;
 	m_scale = scale;
 	m_key = key;
+	m_user_data = user_data;
 }
 
 int 
@@ -40,18 +41,27 @@ spdf::RendererTask::onStart ()
 	spdf::Image *image = NULL;
 	spdf::Message msg;
 	std::string text;
+	std::string key;
 	clock_t t;
 	float s;
 	
+	key = std::to_string (m_document->getId ()) 
+		  + "-" + std::to_string (m_scale)
+		  + "-" + std::to_string (m_index);
+		  
+	msg.setId (TASK_ID_RENDERER);
+	
 	spdf::Cache::instance ()->lock ();
-	image = (spdf::Image*) spdf::Cache::instance ()->get (m_key);
+	image = (spdf::Image*) spdf::Cache::instance ()->get (key);
 	if (image) {
+		msg.setStatus (RENDER_OK);
+		msg.setText (m_key);
+		msg.setUserData (m_user_data);
+		spdf::MessageQueue::instance ()->push (msg);
 		spdf::Cache::instance ()->unlock ();
 		return DESTROY_ON_RETURN;
 	}
 	spdf::Cache::instance ()->unlock ();
-	
-	msg.setId (m_document->getId ());
 	
 	t = clock ();
 	page =  m_document->createPage (m_index);
@@ -59,6 +69,7 @@ spdf::RendererTask::onStart ()
 		text = "error on creating page.";
 		msg.setText (text);
 		msg.setStatus (RENDER_ERROR);
+		msg.setUserData (m_user_data);
 		return DESTROY_ON_RETURN;
 	}
 	
@@ -67,6 +78,7 @@ spdf::RendererTask::onStart ()
 		text = "error on creating image.";
 		msg.setText (text);
 		msg.setStatus (RENDER_ERROR);
+		msg.setUserData (m_user_data);
 		delete (page);
 		return DESTROY_ON_RETURN;
 	}
@@ -76,15 +88,15 @@ spdf::RendererTask::onStart ()
 	std::cout << m_document->getId () << "-" << m_document->getTitle ().data () << " = ";
 	std::cout << "rendered in " << s << " seconds\n";
 	
-	image->convertToARGB32 ();
+	//image->convertToARGB32 ();
 	
 	spdf::Cache::instance ()->lock ();
-	spdf::Cache::instance ()->add (m_key, (void*)image);
-	spdf::Cache::instance ()->unlock ();
-	
+	spdf::Cache::instance ()->add (key, (void*)image);
 	msg.setStatus (RENDER_OK);
 	msg.setText (m_key);
+	msg.setUserData (m_user_data);
 	spdf::MessageQueue::instance ()->push (msg);
+	spdf::Cache::instance ()->unlock ();
 	
 	delete (page);
 	

@@ -35,8 +35,7 @@ namespace spdf {
 	
 	class RendererTask : public spdf::Task {
 		public:
-			RendererTask (spdf::Document *document, int index, 
-										double scale, std::string &key);
+			RendererTask (spdf::Document *document, int index, double scale, std::string &key, void *user_data = NULL);
 			int onStart ();
 		
 		private:
@@ -44,6 +43,7 @@ namespace spdf {
 			int m_index;
 			double m_scale;
 			std::string m_key;
+			void *m_user_data;
 	};
 }
 

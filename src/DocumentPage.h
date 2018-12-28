@@ -28,11 +28,13 @@
 namespace spdf {
 	
 	typedef struct {
+		int index;
 		int x, y;
 		int width, height;
 	} Rect;
 	
 	enum PageSelectionStyle {
+		SELECTION_STYLE_GLYPH,
 		SELECTION_STYLE_WORD,
 		SELECTION_STYLE_LINE
 	};

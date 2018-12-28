@@ -25,14 +25,17 @@ namespace spdf {
 			int getId () const;
 			int getStatus () const;
 			std::string &getText ();
+			void *getUserData ();
 			void setId (int id);
 			void setStatus (int status);
 			void setText (std::string &text);
+			void setUserData (void *user_data);
 			
 		protected:
 			int m_id;
 			int m_status;
 			std::string m_text;
+			void *m_user_data;
 	};
 }
 

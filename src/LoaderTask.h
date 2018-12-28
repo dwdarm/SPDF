@@ -13,36 +13,37 @@
  *
  */
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef LOADERTASK_H
+#define LOADERTASK_H
 
-#include <gtkmm/applicationwindow.h>
-#include <gtkmm/box.h>
-#include "PageNavPopup.h" //
-
-#ifndef MAINTOOLBAR_H
-#include "MainToolbar.h"
+#ifndef TASK_H
+#include "Task.h"
 #endif
 
-#ifndef TABPAGEVIEW_H
-#include "TabPageView.h"
+#ifndef DOCUMENT_H
+#include "Document.h"
 #endif
 
-#ifndef FINDVIEW_H
-#include "FindView.h"
-#endif
+#include <string>
 
 namespace spdf {
-	class MainWindow : public Gtk::ApplicationWindow {
+	
+	enum LoaderTaskStatus {
+		LOAD_ERROR = 0,
+		LOAD_OK
+	};
+	
+	class LoaderTask : public spdf::Task {
 		public:
-			MainWindow (const Glib::RefPtr<Gtk::Application>& app);
-			
-		protected:
-			Gtk::Box m_main_box;
-			MainToolbar m_main_toolbar;
-			TabPageView m_tabpageview;
-			FindView m_findview;
-			PageNavPopup m_page_nav_popup;
+			LoaderTask (spdf::UString &path, spdf::UString &upass,  spdf::UString &opass, std::string &key);
+			int onStart ();
+		
+		private:
+			spdf::UString m_path;
+			spdf::UString m_upass;
+			spdf::UString m_opass;
+			std::string m_key;
+			void *m_user_data;
 	};
 }
 

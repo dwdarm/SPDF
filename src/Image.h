@@ -41,6 +41,7 @@ namespace spdf {
 			double getScale () const;
 			int getStride () const;
 			const unsigned char *getData () const;
+			unsigned char *getData ();
 			void setData (unsigned char *data, int width, int height, int bpp, size_t size);
 			void setDataCopy (const unsigned char *data, int width, int height, int bpp, size_t size);
 			

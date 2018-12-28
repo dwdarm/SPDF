@@ -16,6 +16,7 @@
  */
 
 #include <pangomm/layout.h>
+#include <iostream>
 
 
 // TabHeaderView definition
@@ -62,26 +63,43 @@ spdf::TabHeaderView::setTitle (Glib::ustring &title)
 // PageView definition
 int spdf::PageView::count_id = 1;
 
-spdf::PageView::PageView () : Gtk::Paned ()
+spdf::PageView::PageView () 
+				: Gtk::Paned ()
 {	
 	m_id = spdf::PageView::count_id;
-	m_index = 0;
-	m_scale = 1.0;
 	
-	add2 (m_imageview);
+	m_box.add (m_imageview);
+	m_imageview.show ();
+	
+	add2 (m_box);
 	set_wide_handle ();
 	
 	m_tabheaderview.getButton ().signal_button_press_event ().connect 
 				   (sigc::mem_fun (*this, &PageView::on_tab_close_btn));
 				   
+	m_box.signal_realize ().connect 
+		            (sigc::mem_fun (*this, &PageView::on_page_realize));
+				   
 	spdf::PageView::count_id++;
+}
+
+void *
+spdf::PageView::getData ()
+{
+	return m_data;
+}
+
+Gtk::EventBox &
+spdf::PageView::getEventBox ()
+{
+	return m_box;
 }
 
 spdf::ImageView &
 spdf::PageView::getImageView ()
 {
 	return m_imageview;
-} 
+}
 
 spdf::SidebarView &
 spdf::PageView::getSidebarView ()
@@ -106,6 +124,12 @@ spdf::PageView::hideSidebarView ()
 }
 
 void 
+spdf::PageView::setData (void *data)
+{
+	m_data = data;
+}
+
+void 
 spdf::PageView::showSidebarView ()
 {
 	if (!get_child1 ()) {
@@ -126,4 +150,12 @@ spdf::PageView::on_tab_close_btn (GdkEventButton *event)
 	}
 	
 	return true;
+}
+
+void 
+spdf::PageView::on_page_realize ()
+{
+	Gdk::RGBA bg;
+	bg.set_grey (0.6);	
+	m_box.get_window ()->set_background (bg);
 }

@@ -82,6 +82,12 @@ spdf::Image::getData () const
 	return m_data;
 }
 
+unsigned char *
+spdf::Image::getData ()
+{
+	return m_data;
+}
+
 void 
 spdf::Image::setData (unsigned char *data, int width, int height, int bpp, size_t size)
 {	

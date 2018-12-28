@@ -17,56 +17,131 @@
 #include <memory>
 #include <map>
 #include <vector>
+#include <deque>
 #include <gtkmm/filechooserdialog.h>
 #include "gtk/MainWindow.h"
 #include "DocumentCreator.h"
-
-#define APP_VERSION "0.1a"
+#include "Message.h"
 
 #define SCALE_STEP 0.25
 
 class PageNavPopup;
 
 namespace spdf {
+	
+	enum PageViewMode {
+		MODE_SINGLE_PAGE = 0,
+		MODE_CONTINOUS_pAGE
+	};
+	
+	typedef struct {
+		spdf::ImageView *m_imageview;
+		std::shared_ptr<spdf::Document> m_document;
+		spdf::UString m_path;
+		spdf::UString m_upass;
+		spdf::UString m_opass;
+		PageViewMode m_mode;
+		int m_index;
+		int m_render_index;
+		double m_scale;
+	} PageViewData;
+	
+	typedef struct {
+		spdf::PageView *m_pageview;
+		std::string m_key;
+	} ImageQueueData;
+	
+	typedef struct {
+		spdf::PageView *m_pageview;
+		std::string m_key;
+	} DocumentQueueData;
+	
 	class MainApp : public MainWindow {
 		public:
-			MainApp ();
+			MainApp (const Glib::RefPtr<Gtk::Application>& app);
+			
+			/* load document's path */
+			void load (Glib::ustring &path);
 			
 		private:
+		
+			/* opening document queue */
+			std::deque<spdf::DocumentQueueData> m_doc_queue; 
+			
+			/* rendering image (document's page) queue */
+			std::deque<spdf::ImageQueueData> m_image_queue;
+			
+			/* config and bookmark file's path */
 			std::string m_path;
+			
+			/* loaded config file  */
 			std::map<std::string, std::string> m_configs;
 			
+			/* true if user is selecting texts, false otherwise  */
 			bool m_selecting;
-			Rect m_selected_rect;
-			std::vector<Rect> m_selected_regs;
 			
-			void render_page (Document *doc, int page, double scale);
+			/* sub-region of page. filled when user is selecting texts */
+			int m_x1, m_y1, m_x2, m_y2;
 			
-			void open_document (Glib::ustring &path, spdf::PageView &pageview);
+			/* list of selected texts */
+			std::vector<Rect> m_rects;
+			
+			/* switching page view mode */
+			void switch_mode (spdf::PageView &pageview, spdf::ImageViewMode mode);
+			
+			/* render a page */
+			void render_page (spdf::PageView &pageview);
+			
+			/* draw a page */
+			void draw_page (spdf::PageView &pageview, spdf::Image &image);
+			
+			/* open a document */
+			void open_document 
+				(spdf::PageView &pageview, const spdf::UString &path, const spdf::UString &upass = spdf::UString (), const spdf::UString &opass = spdf::UString ());
+				
+			/* load a document */
 			void load_document (spdf::PageView &pageview);
+			
+			/* close a document */
 			void close_document (spdf::PageView &pageview);
 			
+			/* page navigation */
 			void go_to_page (spdf::PageView &pageview, int index);
 			void go_to_next_page (spdf::PageView &pageview);
 			void go_to_prev_page (spdf::PageView &pageview);
 			void zoom_in_page (spdf::PageView &pageview, double f);
 			void zoom_out_page (spdf::PageView &pageview, double f);
 			
+			/* mark current page */
 			void mark_current_page (spdf::PageView &pageview);
 			
+			/* fullscreen mode */
 			void go_fullscreen ();
 			void go_unfullscreen ();
-			void draw_page (spdf::PageView &pageview);
+			
+			/* fill outline and bookmark */
 			void fill_outline (spdf::PageView &pageview);
 			void fill_bookmark (spdf::PageView &pageview);
 			void walk_fill_outline (spdf::OutlineView &outlineview,
-						std::vector<spdf::DocumentOutlineItem> &toc_item, 
-													Gtk::TreeIter &iter);
+				std::vector<spdf::DocumentOutlineItem> &toc_item, Gtk::TreeIter &iter);
 			void update_toolbar (spdf::PageView &pageview);
-			void find_text (spdf::PageView &pageview, std::string &str);
 			
+			/* update toolbar */
+			void find_text (spdf::PageView &pageview, spdf::ImageView &imageview, std::string &str);
+			
+			/* draw markers on selected texts */
 			void draw_selection_page (spdf::PageView &pageview);
+			
+			/* copy selected texts */
 			void copy_text_selection_page (spdf::PageView &pageview);
+			
+			/* document error handler */
+			void handle_document_error (spdf::PageView &pageview, DocumentError &err);
+			
+			/* translate message */
+			void translate_message (spdf::Message &msg);
+			void process_render_message (spdf::Message &msg);
+			void process_load_message (spdf::Message &msg);
 			
 		//slot:
 			void on_open_btn_clicked ();
@@ -98,5 +173,9 @@ namespace spdf {
 			bool on_image_button_event (GdkEventButton *event);
 			bool on_idle_right_click_event (GdkEventButton *event);
 			bool on_mainapp_key_press_event (GdkEventKey *event);
+			void on_imageview_offset (bool dir, int index);
+			void on_imageview_runout (int index);
+			void on_imageview_current (int index);
+			void on_page_mode_item_toggled ();
 	};
 }

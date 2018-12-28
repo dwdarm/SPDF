@@ -16,7 +16,8 @@
 #include <glibmm/ustring.h>
 #include "MainWindow.h"
 
-spdf::MainWindow::MainWindow ()
+spdf::MainWindow::MainWindow (const Glib::RefPtr<Gtk::Application>& app) 
+				: Gtk::ApplicationWindow (app)
 {
 	m_main_box.set_orientation (Gtk::ORIENTATION_VERTICAL);
 	

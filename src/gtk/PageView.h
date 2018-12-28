@@ -18,9 +18,8 @@
 
 #include <gtkmm/paned.h>
 #include <gtkmm/box.h>
-#include <gtkmm/label.h>
 #include <gtkmm/eventbox.h>
-#include <gtkmm/image.h>
+#include <gtkmm/label.h>
 
 #ifndef SIDEBARVIEW_H
 #include "SidebarView.h"
@@ -30,11 +29,13 @@
 #include "ImageView.h"
 #endif
 
+
 #ifndef DOCUMENT_H
 #include "../Document.h"
 #endif
 
 #include <memory>
+#include <vector>
 
 namespace spdf {
 	
@@ -55,28 +56,29 @@ namespace spdf {
 	class PageView : public Gtk::Paned {
 		public:
 			PageView ();
+			void *getData ();
+			Gtk::EventBox &getEventBox ();
 			ImageView &getImageView ();
 			SidebarView &getSidebarView ();
 			TabHeaderView &getTabHeaderView ();
 			void hideSidebarView ();
+			void setData (void *data);
 			void showSidebarView ();
 			
-			// Document and page attribute
-			std::shared_ptr<Document> m_document;
 			int m_id;
-			int m_index;
-			double m_scale;
-			int m_rotate;
-			
 			static int count_id;
 			
 		private:
+			Gtk::ScrolledWindow m_scroll;
+			Gtk::EventBox m_box;
 			ImageView m_imageview;
 			SidebarView m_sidebarview;
 			TabHeaderView m_tabheaderview;
+			void *m_data;
 			
 		// slot:
 			bool on_tab_close_btn (GdkEventButton *event);
+			void on_page_realize ();
 	};
 }
 

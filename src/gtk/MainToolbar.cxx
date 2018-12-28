@@ -56,7 +56,7 @@ spdf::MainToolbar::MainToolbar ()
 	
 	m_find_btn_item.set_icon_name ("edit-find");
 	//m_find_btn_item.set_tooltip_text ("Next page");
-	append (m_find_btn_item);
+	//append (m_find_btn_item);
 	
 	append (m_sep4);
 	

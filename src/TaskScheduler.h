@@ -22,13 +22,13 @@
 
 #include <thread>
 #include <mutex>
-#include <stack>
+#include <deque>
 #include <vector>
 #include <memory>
 
 namespace spdf {
 	
-	typedef std::stack<Task*> TaskQueue;
+	typedef std::deque<Task*> TaskQueue;
 	typedef std::shared_ptr<TaskQueue> RefTaskQueue;
 	
 	struct _thread_data {

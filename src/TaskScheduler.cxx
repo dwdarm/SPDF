@@ -54,11 +54,11 @@ spdf::TaskScheduler::assign (spdf::Task *task)
 	
 	m_queue_mutex.lock ();
 	while ((m_queue->size ()+1) > m_size) {
-		temp = m_queue->top ();
-		m_queue->pop ();
+		temp = m_queue->at (0);
+		m_queue->pop_front ();
 		delete (temp);
 	}
-	m_queue->push (task);
+	m_queue->push_back (task);
 	m_queue_mutex.unlock ();
 	
 	ret = 1;
@@ -69,11 +69,7 @@ void
 spdf::TaskScheduler::clear ()
 {
 	m_queue_mutex.lock ();
-	
-	while (!m_queue->empty ()) {
-		m_queue->pop ();
-	}
-	
+	m_queue->clear ();
 	m_queue_mutex.unlock ();
 	
 }
@@ -151,8 +147,8 @@ spdf::TaskScheduler::size (int s)
 	m_size = s;
 	t = m_queue->size ();
 	while (t > s) {
-		task = m_queue->top ();
-		m_queue->pop ();
+		task = m_queue->at (0);
+		m_queue->pop_front ();
 		delete (task);
 		t = m_queue->size ();
 	}
@@ -177,8 +173,8 @@ scheduler (spdf::RefThreadData pdata)
 	while (pdata->_run) {
 		m_queue_mutex.lock ();
 		if (!pdata->_queue->empty ()) {
-			task = pdata->_queue->top ();
-			pdata->_queue->pop ();
+			task = pdata->_queue->at (pdata->_queue->size () - 1);
+			pdata->_queue->pop_back ();
 			m_queue_mutex.unlock ();
 			if (task->exec ()) {
 				delete (task);

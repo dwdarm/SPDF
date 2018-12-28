@@ -1,5 +1,15 @@
 subdirs(gtk pdf djvu)
 
+set (SPDF_VERSION_MAJOR 0)
+set (SPDF_VERSION_MINOR 1)
+
+configure_file (
+    "config.h.in"
+    "${PROJECT_BINARY_DIR}/config.h"
+)
+
+include_directories(${PROJECT_BINARY_DIR})
+
 file(GLOB SOURCES "*.cxx")
 add_executable(SPDF ${SOURCES})
 

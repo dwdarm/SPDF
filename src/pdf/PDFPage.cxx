@@ -118,7 +118,7 @@ spdf::PDFPage::searchRect (Rect &rect, std::string &text, double scale, PageSear
 	double yMin = rect.y; 
 	double xMax = rect.width + rect.x;
 	double yMax = rect.height + rect.y;
-	Rect retVal = {0, 0, 0, 0};
+	Rect retVal = {0, 0, 0, 0, 0};
 	bool backward;
 	bool result;
 	
@@ -143,6 +143,7 @@ spdf::PDFPage::searchRect (Rect &rect, std::string &text, double scale, PageSear
 				   gTrue, backward, gFalse, &xMin, &yMin, &xMax, &yMax);
 				   
 	if (result) {
+		retVal.index = getIndex ();
 		retVal.x = (int) xMin;
 		retVal.y = (int) yMin;
 		retVal.width = (int) xMax - retVal.x;
@@ -185,6 +186,7 @@ spdf::PDFPage::searchRect (std::string &text, double scale)
     while (text_page->findText(utext, text.length (), gFalse, gTrue, gFalse, gFalse, 
 					 gTrue, gFalse, gFalse, &xMin, &yMin, &xMax, &yMax))
 	{
+		rect.index = getIndex ();
 		rect.x = (int) xMin;
 		rect.y = (int) yMin;
 		rect.width = (int) xMax - rect.x;
@@ -222,7 +224,9 @@ spdf::PDFPage::getSelectionRegion (PageSelectionStyle style, Rect &rect, double 
     prect.x2 = rect.width;
     prect.y2 = rect.height;
     
-    if (style == SELECTION_STYLE_WORD) {
+    if (style == SELECTION_STYLE_GLYPH) {
+		pstyle = selectionStyleGlyph;
+    } else if (style == SELECTION_STYLE_WORD) {
 		pstyle = selectionStyleWord;
 	} else {
 		pstyle = selectionStyleLine;
@@ -237,6 +241,7 @@ spdf::PDFPage::getSelectionRegion (PageSelectionStyle style, Rect &rect, double 
 	Rect rrect;
     for (int i = 0; i < list->getLength (); i++) {
 		lrect = (PDFRectangle*) list->get (i);
+		rrect.index = getIndex ();
 		rrect.x = lrect->x1;
 		rrect.y = lrect->y1;
 		rrect.width = lrect->x2;
@@ -274,7 +279,9 @@ spdf::PDFPage::getSelectionText (PageSelectionStyle style, Rect &rect, double sc
     prect.x2 = rect.width;
     prect.y2 = rect.height;
     
-    if (style == SELECTION_STYLE_WORD) {
+    if (style == SELECTION_STYLE_GLYPH) {
+		pstyle = selectionStyleGlyph;
+    } else if (style == SELECTION_STYLE_WORD) {
 		pstyle = selectionStyleWord;
 	} else {
 		pstyle = selectionStyleLine;

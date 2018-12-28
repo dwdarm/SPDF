@@ -38,6 +38,12 @@ spdf::Message::getText ()
 	return m_text;
 }
 
+void *
+spdf::Message::getUserData ()
+{
+	return m_user_data;
+}
+
 void
 spdf::Message::setId (int id)
 {
@@ -54,4 +60,10 @@ void
 spdf::Message::setText (std::string &text)
 {
 	m_text = text;
+}
+
+void 
+spdf::Message::setUserData (void *user_data)
+{
+	m_user_data = user_data;
 }

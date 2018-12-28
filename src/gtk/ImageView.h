@@ -1,89 +1,111 @@
-/*
- * Copyright (C) 2017, Fajar Dwi Darmanto <fajardwidarm@gmail.com>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2, or (at your option)
- * any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- */
-
 #ifndef IMAGEVIEW_H
 #define IMAGEVIEW_H
 
-#include <gtkmm/scrolledwindow.h>
-#include <gtkmm/eventbox.h>
-#include <gtkmm/image.h>
-#include <gtkmm/cssprovider.h>
-#include <gtkmm/stylecontext.h>
+#include <gtkmm/widget.h>
+#include <gtkmm/scrollbar.h>
 #include <gtkmm/adjustment.h>
-#include <vector>
+#include <sigc++/sigc++.h>
 #include <memory>
+#include <deque>
 
 namespace spdf {
 	
-	typedef struct {
-		unsigned char r;
-		unsigned char g;
-		unsigned char b;
-		unsigned char a;
-	} ImageViewColor;
+	enum ImageViewMode {
+		IMAGEVIEW_SINGLE = 0,
+		IMAGEVIEW_CONTINOUS
+	};
 	
 	typedef struct {
-		int x;
-		int y;
-		int width;
-		int height;
-		ImageViewColor color;
-		bool fill;
+		std::shared_ptr<unsigned char> m_refImage;
+		std::shared_ptr<unsigned char> m_refImagec;
+		int m_image_index;
+		int m_image_width;
+		int m_image_height;
+		int m_image_row;
+	} ImageViewData;
+	
+	typedef struct {
+		int m_index;
+		int m_x;
+		int m_y;
+		int m_width;
+		int m_height;
+	} ImageViewMarker;
+	
+	typedef struct {
+		ImageViewData m_imageview_data;
+		int m_x1;
+		int m_y1;
+		int m_x2;
+		int m_y2;
 	} ImageViewRect;
-	
-	typedef struct {
-		int x;
-		int y;
-	} ImageViewPointer;
-	
-	class ImageView : public Gtk::ScrolledWindow {
-		public: 
+
+	class ImageView : public Gtk::Widget {
+		
+		public:
 			ImageView ();
-			void appendRect (ImageViewRect &rect);
-			void appendRects (std::vector<ImageViewRect> &rects);
-			void clearImage ();
-			void drawRect (ImageViewRect &rect);
-			void drawRects (std::vector<ImageViewRect> &rects);
-			Gtk::EventBox &getEventBox ();
-			Gtk::Image &getImage ();
-			int getImageHeight () const;
-			int getImageWidth () const;
-			std::shared_ptr<ImageViewColor> getPixel (int x, int y);
-			std::shared_ptr<ImageViewPointer> getPointer ();
+			virtual ~ImageView ();
+			void cursor_position (int &x, int &y);
+			void clear ();
+			void clear_marker ();
+			void draw_marker (std::vector<ImageViewMarker> &markers);
+			void freeze (bool f = true);
+			ImageViewMode get_mode () const;
+			std::vector<ImageViewRect> get_image_at_display ();
+			std::vector<ImageViewRect> get_image_at_region (int x1, int y1, int x2, int y2);
+			bool last_signal () const;
+			void push_front(unsigned char *d, int i, int w, int h, int r);
+			void push_back (unsigned char *d, int i, int w, int h, int r);
+			void pop_front();
+			void pop_back ();
 			void refresh ();
-			void scrollDown ();
-			void scrollLeft ();
-			void scrollRight ();
-			void scrollUp ();
-			void setImage (const unsigned char *d, int w, int h, int row);
-			void setPixel (int x, int y, ImageViewColor &color);
+			void scroll_up ();
+			void scroll_down ();
+			void scroll_left ();
+			void scroll_right ();
+			void set (unsigned char *d, int i, int w, int h, int r);
+			void set_mode (ImageViewMode mode);
 			
-		private:
-			Gtk::Image m_image;
-			int m_image_width;
-			int m_image_height;
-			int m_image_row;
-			Gtk::EventBox m_image_event_box;
-			std::shared_ptr<unsigned char> m_data; 
-			std::shared_ptr<unsigned char> m_cdata; 
-			Glib::RefPtr<Gdk::Pixbuf> m_pixbuf;
-			Glib::RefPtr<Gtk::CssProvider> cssprovider;
-			Glib::RefPtr<Gtk::Adjustment> m_hadj;
-			Glib::RefPtr<Gtk::Adjustment> m_vadj;
+			sigc::signal<void, bool, int> signal_offset ();
+			sigc::signal<void, int> signal_runout ();
+			sigc::signal<void, int> signal_current ();
 			
-			void on_mvadj_val_changed ();
+		protected:
+			void do_surface_drawing ();
+			void do_regular_drawing (const Cairo::RefPtr<Cairo::Context>& cr);
+			
+			Glib::RefPtr<Gdk::Window> m_refGdkWindow;
+			Cairo::RefPtr<::Cairo::ImageSurface> m_image_surface;
+			std::deque<ImageViewData> m_data;
+			std::vector<ImageViewMarker> m_markers;
+			int m_padding;
+			int m_sspeed;
+			int m_pos;
+			int m_posx;
+			int m_image_total_height;
+			bool m_freeze;
+			ImageViewMode m_mode;
+			int m_max_size;
+			bool m_last_signal;
+			bool m_is_edited;
+			
+			sigc::signal<void, bool, int> m_signal_offset;
+			sigc::signal<void, int> m_signal_runout;
+			sigc::signal<void, int> m_signal_current;
+			
+			bool on_imageview_scroll_event (GdkEventScroll* scroll_event);
+			
+			Gtk::SizeRequestMode get_request_mode_vfunc() const override;
+			void get_preferred_width_vfunc(int& minimum_width, int& natural_width) const override;
+			void get_preferred_height_for_width_vfunc(int width, int& minimum_height, int& natural_height) const  override;
+			void get_preferred_height_vfunc(int& minimum_height, int& natural_height) const override;
+			void get_preferred_width_for_height_vfunc(int height, int& minimum_width, int& natural_width) const override;
+			void on_size_allocate(Gtk::Allocation& allocation) override;
+			void on_map() override;
+			void on_unmap() override;
+			void on_realize() override;
+			void on_unrealize() override;
+			bool on_draw(const Cairo::RefPtr<Cairo::Context>& cr) override;
 	};
 }
 
