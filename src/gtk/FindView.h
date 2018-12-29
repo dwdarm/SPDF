@@ -27,10 +27,12 @@ namespace spdf {
 		public: 
 			FindView ();
 			Gtk::Entry &getEntry ();
+			Gtk::ToolButton &getSearchButtonItem ();
 			
 		private:
 			Gtk::ToolItem m_label_item;
 			Gtk::ToolItem m_entry_item;
+			Gtk::ToolButton m_search_btn;
 			Gtk::ToolButton m_prev_btn;
 			Gtk::ToolButton m_next_btn;
 			Gtk::ToolButton m_close_btn;

@@ -51,8 +51,8 @@ namespace spdf {
 			void draw_marker (std::vector<ImageViewMarker> &markers);
 			void freeze (bool f = true);
 			ImageViewMode get_mode () const;
-			std::vector<ImageViewRect> get_image_at_display ();
 			std::vector<ImageViewRect> get_image_at_region (int x1, int y1, int x2, int y2);
+			std::vector<int> get_image_indexs ();
 			bool last_signal () const;
 			void push_front(unsigned char *d, int i, int w, int h, int r);
 			void push_back (unsigned char *d, int i, int w, int h, int r);

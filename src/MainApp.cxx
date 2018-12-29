@@ -166,6 +166,9 @@ spdf::MainApp::MainApp (const Glib::RefPtr<Gtk::Application>& app)
 				 
 	m_findview.getEntry ().signal_activate ().connect 
 		  (sigc::mem_fun (*this, &MainApp::on_find_entry_text_changed));
+		  
+	m_findview.getSearchButtonItem ().signal_clicked ().connect 
+		  (sigc::mem_fun (*this, &MainApp::on_find_entry_text_changed));
 	
 	m_selecting = false;	
 	Glib::signal_timeout ().connect (sigc::mem_fun 
@@ -610,44 +613,41 @@ spdf::MainApp::update_toolbar (spdf::PageView &pageview)
 
 // find text
 void 
-spdf::MainApp::find_text (spdf::PageView &pageview, spdf::ImageView &imageview, std::string &str)
+spdf::MainApp::find_text (spdf::PageView &pageview, spdf::UString &text)
 {
-	/*
-	static Rect rect = {0, 0, 0, 0};
-	static std::string text;
-	
-	std::shared_ptr<DocumentPage> page;
-	ImageViewRect irect;
 	spdf::PageViewData *data = NULL;
+	std::shared_ptr<spdf::DocumentPage> page;
+	std::vector<spdf::Rect> prects;
+	std::vector<spdf::ImageViewMarker> irects;
+	spdf::ImageViewMarker irect;
+	std::string txt = text.data ();
+	std::vector<int> indexs;
 	
 	data = (spdf::PageViewData*) pageview.getData ();
+	indexs = pageview.getImageView ().get_image_indexs ();
+	for (int i=0; i < indexs.size (); i++) {
+		
+		page = std::shared_ptr<spdf::DocumentPage> (data->m_document->createPage (indexs[i]));
+		prects = page->searchRect (txt, data->m_scale);
+		
+		if (!prects.size ()) {
+			continue;
+		}
 	
-	if (text != str) {
-		rect = {0, 0, 0, 0};
-		text = str;
+		irect.m_index = indexs[i];
+		for (int j = 0; j < prects.size (); j++) {
+			irect.m_x = prects[j].x;
+			irect.m_y = prects[j].y;
+			irect.m_width = prects[j].width;
+			irect.m_height = prects[j].height;
+			irects.push_back (irect);
+		}
 	}
 	
-	page = std::shared_ptr<DocumentPage> 
-				   (data->m_document->createPage (data->m_index));
-	rect = page->searchRect (rect, text, data->m_scale, SEARCH_DIRECTION_NEXT);
-	
-	irect.color.r = 0;
-	irect.color.g = 0;
-	irect.color.b = 0;
-	irect.color.a = 100;
-	imageview.refresh ();
-	
-	irect.x = rect.x;
-	irect.y = rect.y;
-	irect.width = rect.width;
-	irect.height = rect.height;
-		
-	imageview.clearImage ();
-	imageview.appendRect (irect);
-	
-	rect.x = rect.x + rect.width;
-	rect.y = rect.y + rect.height;
-	*/
+	pageview.getImageView ().clear_marker ();
+	if (irects.size ()) {
+		pageview.getImageView ().draw_marker (irects);
+	}
 }
 
 void 
@@ -1196,7 +1196,7 @@ spdf::MainApp::on_find_entry_text_changed ()
 {
 	spdf::PageView *pageview = NULL;
 	spdf::PageViewData *data = NULL;
-	std::string text;
+	spdf::UString text;
 	
 	pageview = m_tabpageview.getCurrentPage ();
 	if (!pageview) {
@@ -1208,8 +1208,8 @@ spdf::MainApp::on_find_entry_text_changed ()
 		return;
 	}
 	
-	text = m_findview.getEntry ().get_text ().raw ();
-	//find_text (*pageview, text);
+	text = spdf::UString (m_findview.getEntry ().get_text ().raw ().data ());
+	find_text (*pageview, text);
 }
 
 bool 
@@ -1446,9 +1446,9 @@ spdf::MainApp::on_mainapp_key_press_event (GdkEventKey *event)
 				return false;											
 			}
 		
-			//if (!pageview->m_document.get ()) {
-			//	return false;
-			//}
+			if (!data->m_document.get ()) {
+				return false;
+			}
 			on_prev_btn_clicked ();
 			return true;
 		
@@ -1460,9 +1460,9 @@ spdf::MainApp::on_mainapp_key_press_event (GdkEventKey *event)
 				return false;											
 			}
 		
-			//if (!pageview->m_document.get ()) {
-			//	return false;
-			//}
+			if (!data->m_document.get ()) {
+				return false;
+			}
 			
 			on_next_btn_clicked ();
 			return true;
@@ -1475,10 +1475,10 @@ spdf::MainApp::on_mainapp_key_press_event (GdkEventKey *event)
 				return false;											
 			}
 			
-			//if (!pageview->m_document.get ()) {
-			//	return false;
-			//}
-			//on_zoomout_btn_clicked ();
+			if (!data->m_document.get ()) {
+				return false;
+			}
+			on_zoomout_btn_clicked ();
 			return true;
 		
 		// Zoom in		
@@ -1489,11 +1489,11 @@ spdf::MainApp::on_mainapp_key_press_event (GdkEventKey *event)
 				return false;											
 			}
 		
-			//if (!pageview->m_document.get ()) {
-			//	return false;
-			//}
+			if (!data->m_document.get ()) {
+				return false;
+			}
 			
-			//on_zoomin_btn_clicked ();
+			on_zoomin_btn_clicked ();
 			return true;
 		
 		// Full screen	

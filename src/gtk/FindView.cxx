@@ -19,14 +19,16 @@ spdf::FindView::FindView () : Gtk::Toolbar (), m_label ("Find: ")
 {
 	m_label_item.add (m_label);
 	m_entry_item.add (m_entry);
+	m_search_btn.set_icon_name ("edit-find");
 	m_prev_btn.set_icon_name ("go-previous");
 	m_next_btn.set_icon_name ("go-next");
 	m_close_btn.set_icon_name ("window-close");
 	
 	append (m_label_item);
 	append (m_entry_item);
-	append (m_prev_btn);
-	append (m_next_btn);
+	append (m_search_btn);
+	//append (m_prev_btn);
+	//append (m_next_btn);
 	append (m_close_btn);
 	
 	m_close_btn.signal_clicked ().connect (sigc::mem_fun 
@@ -39,6 +41,12 @@ Gtk::Entry &
 spdf::FindView::getEntry ()
 {
 	return m_entry;
+}
+
+Gtk::ToolButton &
+spdf::FindView::getSearchButtonItem ()
+{
+	return m_search_btn;
 }
 
 void 

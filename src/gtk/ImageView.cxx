@@ -186,6 +186,18 @@ spdf::ImageView::get_image_at_region (int x1, int y1, int x2, int y2)
 	return rects;
 }
 
+std::vector<int> 
+spdf::ImageView::get_image_indexs ()
+{
+	std::vector<int> ret;
+	
+	for (int i = 0; i < m_data.size (); i++) {
+		ret.push_back (m_data[i].m_image_index);
+	}
+	
+	return ret;
+}
+
 bool 
 spdf::ImageView::last_signal () const
 {

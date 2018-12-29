@@ -127,7 +127,7 @@ namespace spdf {
 			void update_toolbar (spdf::PageView &pageview);
 			
 			/* update toolbar */
-			void find_text (spdf::PageView &pageview, spdf::ImageView &imageview, std::string &str);
+			void find_text (spdf::PageView &pageview, spdf::UString &text);
 			
 			/* draw markers on selected texts */
 			void draw_selection_page (spdf::PageView &pageview);
