@@ -22,6 +22,7 @@
 #include "gtk/MainWindow.h"
 #include "DocumentCreator.h"
 #include "Message.h"
+#include "Configuration.h"
 
 #define SCALE_STEP 0.25
 
@@ -43,12 +44,14 @@ namespace spdf {
 		PageViewMode m_mode;
 		int m_index;
 		int m_render_index;
+		int m_image_id;
 		double m_scale;
 	} PageViewData;
 	
 	typedef struct {
 		spdf::PageView *m_pageview;
 		std::string m_key;
+		int m_id;
 	} ImageQueueData;
 	
 	typedef struct {
@@ -76,6 +79,7 @@ namespace spdf {
 			
 			/* loaded config file  */
 			std::map<std::string, std::string> m_configs;
+			spdf::ConfigData m_config;
 			
 			/* true if user is selecting texts, false otherwise  */
 			bool m_selecting;
@@ -86,14 +90,18 @@ namespace spdf {
 			/* list of selected texts */
 			std::vector<Rect> m_rects;
 			
+			/* load and save config */
+			void load_config (std::string &path);
+			void save_config ();
+			
+			/* save current page session */
+			void save_session (spdf::PageView &pageview);
+			
 			/* switching page view mode */
 			void switch_mode (spdf::PageView &pageview, spdf::ImageViewMode mode);
 			
 			/* render a page */
 			void render_page (spdf::PageView &pageview);
-			
-			/* draw a page */
-			void draw_page (spdf::PageView &pageview, spdf::Image &image);
 			
 			/* open a document */
 			void open_document 
@@ -122,8 +130,6 @@ namespace spdf {
 			/* fill outline and bookmark */
 			void fill_outline (spdf::PageView &pageview);
 			void fill_bookmark (spdf::PageView &pageview);
-			void walk_fill_outline (spdf::OutlineView &outlineview,
-				std::vector<spdf::DocumentOutlineItem> &toc_item, Gtk::TreeIter &iter);
 			void update_toolbar (spdf::PageView &pageview);
 			
 			/* update toolbar */
@@ -131,6 +137,7 @@ namespace spdf {
 			
 			/* draw markers on selected texts */
 			void draw_selection_page (spdf::PageView &pageview);
+			void update_cursor (spdf::PageView &pageview);
 			
 			/* copy selected texts */
 			void copy_text_selection_page (spdf::PageView &pageview);
@@ -142,6 +149,7 @@ namespace spdf {
 			void translate_message (spdf::Message &msg);
 			void process_render_message (spdf::Message &msg);
 			void process_load_message (spdf::Message &msg);
+			void password_prompt (spdf::PageView &pageview);
 			
 		//slot:
 			void on_open_btn_clicked ();
@@ -162,6 +170,7 @@ namespace spdf {
 			
 			void on_tab_page_changed (Gtk::Widget* page, guint page_num);
 			void on_tab_page_added (Gtk::Widget* page, guint page_num);
+			void on_tab_page_removed (Gtk::Widget* page, guint page_num);
 			
 			bool on_outline_sel_changed (GdkEventButton *event);
 			bool on_bookmark_sel_changed (GdkEventButton *event);
@@ -170,11 +179,11 @@ namespace spdf {
 			
 			bool on_timeout_msg ();
 			bool on_timeout_sel ();
+			bool on_timeout_session ();
 			bool on_image_button_event (GdkEventButton *event);
 			bool on_idle_right_click_event (GdkEventButton *event);
 			bool on_mainapp_key_press_event (GdkEventKey *event);
 			void on_imageview_offset (bool dir, int index);
-			void on_imageview_runout (int index);
 			void on_imageview_current (int index);
 			void on_page_mode_item_toggled ();
 	};

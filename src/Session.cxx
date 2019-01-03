@@ -13,7 +13,7 @@
  *
  */
 
-#include "Bookmark.h"
+#include "Session.h"
 #include <json-glib/json-glib.h>
 #include <iostream>
 
@@ -22,25 +22,25 @@ struct spdf::_parser {
 	JsonParser *psr;
 };
 
-spdf::Bookmark *spdf::Bookmark::m_instance = NULL;
+spdf::Session *spdf::Session::m_instance = NULL;
 
-spdf::Bookmark *
-spdf::Bookmark::instance ()
+spdf::Session *
+spdf::Session::instance ()
 {
 	if (!m_instance) {
-		m_instance = new Bookmark ();
+		m_instance = new Session ();
 	}
 	
 	return m_instance;
 }
 
-spdf::Bookmark::Bookmark () : m_is_opened (false) 
+spdf::Session::Session () : m_is_opened (false) 
 { 
 	m_parser = new Parser; 
 	m_parser->psr = json_parser_new ();
 };
 
-spdf::Bookmark::~Bookmark ()
+spdf::Session::~Session ()
 {
 	if (m_parser) {
 		if (m_parser->psr) {
@@ -51,10 +51,10 @@ spdf::Bookmark::~Bookmark ()
 }
 
 void
-spdf::Bookmark::add (std::string &title, int index)
+spdf::Session::add (std::string &title, SessionData &data)
 {
 	JsonObject *obj = NULL;
-	JsonArray *in = NULL;
+	JsonObject *dat = NULL;
 	
 	if (!m_is_opened) {
 		return;
@@ -65,25 +65,27 @@ spdf::Bookmark::add (std::string &title, int index)
 		return;
 	}
 	
-	if (!json_object_has_member (obj, title.data ())) {
-		in = json_array_new ();
-		json_array_add_int_element (in, index);
-		json_object_set_array_member (obj, title.data (), in);
-		save ();
-		//json_array_unref(in);
-		return;
-	} 
+	if (json_object_has_member (obj, title.data ())) {
+		dat = json_object_get_object_member (obj, title.data ());
+	} else {
+		dat = json_object_new ();
+		json_object_set_object_member (obj, title.data (), dat);
+	}
 	
-	in = json_object_get_array_member (obj, title.data ());
-	json_array_add_int_element (in, index);
+	json_object_set_string_member 
+		(dat, "user_pass", (data.m_upass.length () > 0) ? data.m_upass.data () : "");
+	json_object_set_string_member 
+		(dat, "owner_pass", (data.m_opass.length () > 0) ? data.m_opass.data () : "");
+	json_object_set_int_member (dat, "page_mode", data.m_mode);
+	json_object_set_int_member (dat, "page_index", data.m_index);
+	json_object_set_double_member (dat, "page_scale", data.m_scale);
 	save ();
 }
 
 void
-spdf::Bookmark::erase (std::string &title, int index)
+spdf::Session::erase (std::string &title)
 {
 	JsonObject *obj = NULL;
-	JsonArray *in = NULL;
 	
 	if (!m_is_opened) {
 		return;
@@ -98,21 +100,15 @@ spdf::Bookmark::erase (std::string &title, int index)
 		return;
 	}
 	
-	in = json_object_get_array_member (obj, title.data ());
-	for (int i = 0; i < json_array_get_length (in); i++) {
-		if (json_array_get_int_element (in, i) == index) {
-			json_array_remove_element (in, i);
-			save ();
-			break;
-		}
-	}
+	json_object_remove_member (obj, title.data ());
+	save ();
 }
 
-bool 
-spdf::Bookmark::find (std::string &title, int index)
+bool
+spdf::Session::get (std::string &title, SessionData &data)
 {
 	JsonObject *obj = NULL;
-	JsonArray *in = NULL;
+	JsonObject *dat = NULL;
 	
 	if (!m_is_opened) {
 		return false;
@@ -123,83 +119,28 @@ spdf::Bookmark::find (std::string &title, int index)
 		return false;
 	}
 	
-	if (!json_object_get_size (obj)) {
-		return false;
-	}
-	
 	if (!json_object_has_member (obj, title.data ())) {
 		return false;
-	}
+	} 
 	
-	in = json_object_get_array_member (obj, title.data ());
-	for (int i = 0; i < json_array_get_length (in); i++) {
-		if (json_array_get_int_element (in, i) == index) {
-			return true;
-		}
-	}
+	dat = json_object_get_object_member (obj, title.data ());
 	
-	return false;
-}
-
-bool 
-spdf::Bookmark::find (std::string &title)
-{
-	if (!m_is_opened) {
-		return false;
-	}
-	
-	JsonObject *obj = json_node_get_object (m_parser->root);
-	
-	if (!obj) {
-		return false;
-	}
-	
-	if (!json_object_get_size (obj)) {
-		return false;
-	}
-	
-	if (!json_object_has_member (obj, title.data ())) {
-		return false;
-	}
-	
+	data.m_opass = ((json_object_has_member (dat, "owner_pass") == true) ? 
+		json_object_get_string_member (dat, "owner_pass") : "");
+	data.m_upass = ((json_object_has_member (dat, "user_pass") == true) ? 
+		json_object_get_string_member (dat, "user_pass") : "");
+	data.m_mode = ((json_object_has_member (dat, "page_mode") == true) ? 
+		json_object_get_int_member (dat, "page_mode") : 1);
+	data.m_index = ((json_object_has_member (dat, "page_index") == true) ? 
+		json_object_get_int_member (dat, "page_index") : 0);
+	data.m_scale = ((json_object_has_member (dat, "page_scale") == true) ? 
+		json_object_get_double_member (dat, "page_scale") : 1.0);
+		
 	return true;
 }
 
-std::vector<int> 
-spdf::Bookmark::get (std::string &title)
-{
-	std::vector<int> ret;
-	JsonArray *in = NULL;
-	JsonObject *obj = NULL;
-	
-	if (!m_is_opened) {
-		return ret;
-	}
-	
-	obj = json_node_get_object (m_parser->root);
-	
-	if (!obj) {
-		return ret;
-	}
-	
-	if (!json_object_get_size (obj)) {
-		return ret;
-	}
-	
-	if (!json_object_has_member (obj, title.data ())) {
-		return ret;
-	}
-	
-	in = json_object_get_array_member (obj, title.data ());
-	for (int i = 0; i < json_array_get_length (in); i++) {
-		ret.push_back (json_array_get_int_element (in, i));
-	}
-	
-	return ret;
-}
-
 void
-spdf::Bookmark::open (std::string &filename)
+spdf::Session::open (std::string &filename)
 {
 	GError *err = NULL;
 	m_filename = filename;
@@ -220,7 +161,7 @@ spdf::Bookmark::open (std::string &filename)
 }
 
 void
-spdf::Bookmark::save ()
+spdf::Session::save ()
 {
 	JsonGenerator *gen = NULL;
 	GError *err = NULL;
@@ -233,6 +174,7 @@ spdf::Bookmark::save ()
 	json_generator_set_root (gen, m_parser->root);
 	
 	if (!json_generator_to_file (gen, m_filename.data (), &err)) {
+		std::cout << "ERROR" << "\n";
 		if (err) {
 			std::cout << err->message << "\n";
 			g_error_free (err);

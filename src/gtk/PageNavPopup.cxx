@@ -26,9 +26,9 @@ spdf::PageNavPopup::PageNavPopup ()
 		  m_zoomout_item ("Zoom out"),
 		  m_zoomin_item ("Zoom in")
 {
-	append (m_cons_mode_item);
-	append (m_sep1);
 	append (m_copy_item);
+	append (m_sep1);
+	append (m_cons_mode_item);
 	append (m_sep2);
 	append (m_first_item);
 	append (m_prev_item);

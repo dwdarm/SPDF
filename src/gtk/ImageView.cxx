@@ -19,7 +19,7 @@ spdf::ImageView::ImageView ()
 	m_image_total_height = 0;
 	m_pos = 0;
 	m_posx = 0;
-	m_max_size = 2;
+	m_max_size = 0;
 	m_last_signal = true;
 	m_is_edited = false;
 	
@@ -64,7 +64,7 @@ spdf::ImageView::clear ()
 	m_image_total_height = 0;
 	m_pos = 0;
 	m_posx = 0;
-	m_max_size = 2;
+	m_max_size = 0;
 	m_last_signal = true;
 	m_is_edited = false;
 	
@@ -204,21 +204,38 @@ spdf::ImageView::last_signal () const
 	return m_last_signal;
 }
 
-void
+int
+spdf::ImageView::max_size () const
+{
+	return m_max_size;
+}
+
+int
 spdf::ImageView::push_front (unsigned char *d, int i, int w, int h, int r)
 {
 	ImageViewData data;
 	
 	if (m_mode == IMAGEVIEW_CONTINOUS) {
-		while (m_data.size () >= m_max_size) {
+		while (m_data.size () > m_max_size) {
 			pop_back ();
 		}
 	}
 	
 	data.m_refImage = std::shared_ptr<unsigned char> 
 	     (new unsigned char[r*h], [] (unsigned char *p) { delete [] p;});
-	memcpy (data.m_refImage.get (), d, r*h);
 	
+	if (d) {
+		memcpy (data.m_refImage.get (), d, r*h);
+	} else {
+		for (int i = 0; i < r*h; i+=4) {
+			data.m_refImage.get ()[i] = 255;
+			data.m_refImage.get ()[i+1] = 255;
+			data.m_refImage.get ()[i+2] = 255;
+			data.m_refImage.get ()[i+3] = 255;
+		}
+	}
+	
+	data.m_image_id = m_id++;
 	data.m_image_index = i;
 	data.m_image_width = w;
 	data.m_image_height = h;
@@ -229,23 +246,36 @@ spdf::ImageView::push_front (unsigned char *d, int i, int w, int h, int r)
 	m_pos += (h);
 	
 	m_is_edited = true;
+	
+	return data.m_image_id;
 }
 
-void
+int
 spdf::ImageView::push_back (unsigned char *d, int i, int w, int h, int r)
 {
 	ImageViewData data;
 	
 	if (m_mode == IMAGEVIEW_CONTINOUS) {
-		while (m_data.size () >= m_max_size) {
+		while (m_data.size () > m_max_size) {
 			pop_front ();
 		}
 	}
 	
 	data.m_refImage = std::shared_ptr<unsigned char> 
 	     (new unsigned char[r*h], [] (unsigned char *p) { delete [] p;});
-	memcpy (data.m_refImage.get (), d, r*h);
 	
+	if (d) {
+		memcpy (data.m_refImage.get (), d, r*h);
+	} else {
+		for (int i = 0; i < r*h; i+=4) {
+			data.m_refImage.get ()[i] = 255;
+			data.m_refImage.get ()[i+1] = 255;
+			data.m_refImage.get ()[i+2] = 255;
+			data.m_refImage.get ()[i+3] = 255;
+		}
+	}
+	
+	data.m_image_id = m_id++;
 	data.m_image_index = i;
 	data.m_image_width = w;
 	data.m_image_height = h;
@@ -255,6 +285,8 @@ spdf::ImageView::push_back (unsigned char *d, int i, int w, int h, int r)
 	m_image_total_height += (h + m_padding);
 	
 	m_is_edited = true;
+	
+	return data.m_image_id;
 }
 
 void 
@@ -296,26 +328,28 @@ spdf::ImageView::pop_back ()
 void 
 spdf::ImageView::refresh ()
 {
-	if (!m_data.size ()) {
-		return;
-	}
-	
-	if (m_is_edited) {
-		do_surface_drawing ();
-		m_is_edited = false;
-	}
+	do_surface_drawing ();
+	queue_draw ();
+}
+
+bool
+spdf::ImageView::runout () const
+{
+	bool ret = false;
 	
 	if (m_mode == IMAGEVIEW_CONTINOUS) {
-		if (m_image_total_height <= get_allocation().get_height()) {
-			m_last_signal = true;
-			m_signal_runout.emit (m_data.back ().m_image_index);
-			m_max_size += 1;
-		} else {
-			queue_draw ();
-		}
-	} else {
-		queue_draw ();
-	}
+		if (m_image_total_height < m_refGdkWindow->get_height ()) {
+			ret = true;
+		} 
+	} 
+	
+	return ret;
+}
+
+void 
+spdf::ImageView::inc_max_size ()
+{
+	m_max_size++;
 }
 
 void 
@@ -337,7 +371,7 @@ spdf::ImageView::scroll_up ()
 	
 	if ((m_pos - m_sspeed) <= 0) {
 		m_pos = 0;
-		queue_draw ();
+		//queue_draw ();
 		if (m_mode == IMAGEVIEW_CONTINOUS) {
 			m_last_signal = false;
 			m_signal_offset.emit (false, m_data.front ().m_image_index);
@@ -355,7 +389,8 @@ spdf::ImageView::scroll_up ()
 		pos += ((*it).m_image_height + m_padding);
 	}
 	
-	refresh ();
+	//refresh ();
+	queue_draw ();
 }
 
 void 
@@ -376,8 +411,8 @@ spdf::ImageView::scroll_down ()
 	}
 	
 	if ((m_pos + m_sspeed) >= (m_image_total_height - get_allocation().get_height ())) {
-		m_pos = m_image_total_height - get_allocation().get_height ();
-		queue_draw ();
+		m_pos = (m_image_total_height - get_allocation().get_height ());
+		//queue_draw ();
 		if (m_mode == IMAGEVIEW_CONTINOUS) {
 			m_last_signal = true;
 			m_signal_offset.emit (true, m_data.back ().m_image_index);
@@ -395,7 +430,8 @@ spdf::ImageView::scroll_down ()
 		pos += ((*it).m_image_height + m_padding);
 	}
 	
-	refresh ();
+	//refresh ();
+	queue_draw ();
 }
 
 void 
@@ -485,24 +521,54 @@ spdf::ImageView::set (unsigned char *d, int i, int w, int h, int r)
 	m_image_total_height = (h + m_padding);
 	
 	m_is_edited = true;
+	
+	do_surface_drawing ();
+	queue_draw ();
+}
+
+void
+spdf::ImageView::set (unsigned char *d, int id)
+{
+	ImageViewData data;
+	int in = 0;
+	bool found = false;
+	
+	if (!m_data.size ()) {
+		return;
+	}
+	
+	for (int i = 0; i < m_data.size (); i++) {
+		if (m_data[i].m_image_id == id) {
+			in = i;
+			found = true;
+			break;
+		}
+	}
+	
+	if (!found) {
+		return;
+	}
+	
+	memcpy (m_data[in].m_refImage.get (), d, m_data[in].m_image_row * m_data[in].m_image_height);
+	
+	m_is_edited = true;
+	
+	do_surface_drawing ();
+	queue_draw ();
 }
 
 void 
 spdf::ImageView::set_mode (ImageViewMode mode)
 {
+	clear ();
 	m_mode = mode;
+	
 }
 
 sigc::signal<void, bool, int> 
 spdf::ImageView::signal_offset ()
 {
 	return m_signal_offset;
-}
-
-sigc::signal<void, int> 
-spdf::ImageView::signal_runout ()
-{
-	return m_signal_runout;
 }
 
 sigc::signal<void, int> 
@@ -567,7 +633,8 @@ spdf::ImageView::do_regular_drawing (const Cairo::RefPtr<Cairo::Context>& cr)
 	
 	cr->save();
 	cr->set_source_rgba (0, 0, 0, 0);
-	cr->paint ();		
+	cr->rectangle (0, 0, width, height);
+	cr->fill ();		
 	cr->restore();
 	
 	if (!m_image_surface) {
@@ -617,7 +684,8 @@ spdf::ImageView::do_regular_drawing (const Cairo::RefPtr<Cairo::Context>& cr)
 	}
 	
 	cr->save();
-	surface = Cairo::Surface::create (m_image_surface, m_posx, m_pos, m_image_surface->get_width (), fit_width);
+	surface = Cairo::Surface::create 
+		(m_image_surface, m_posx, m_pos, m_image_surface->get_width (), fit_width);
 	cr->set_source (surface, center_width, center_height);
 	cr->paint ();		
 	cr->restore();

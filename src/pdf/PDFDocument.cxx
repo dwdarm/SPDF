@@ -182,8 +182,8 @@ spdf::PDFDocument::createPage (int index)
 		retVal = new spdf::PDFPage ();
 		retVal->m_poppler_page = poppler_page;
 		retVal->m_index = index;
-		retVal->m_width = poppler_page->getMediaWidth ();
-		retVal->m_height = poppler_page->getMediaHeight ();
+		retVal->m_width = poppler_page->getCropWidth ();
+		retVal->m_height = poppler_page->getCropHeight ();
 	}
 	
 	return retVal;

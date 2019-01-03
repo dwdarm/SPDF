@@ -13,8 +13,8 @@
  *
  */
 
-#ifndef BOOKMARK_H
-#define BOOKMARK_H
+#ifndef CONFIGURATION_H
+#define CONFIGURATION_H
 
 #include <string>
 #include <vector>
@@ -24,22 +24,26 @@ namespace spdf {
     struct _parser;
 	typedef struct _parser Parser;
 	
-	class Bookmark {
+	typedef struct {
+		int m_cache;
+		int m_thread;
+		int m_scroll;
+		int m_padding;
+	} ConfigData;
+	
+	class Configuration {
 		public:
-		    ~Bookmark ();
-			void add (std::string &title, int index);
-			void erase (std::string &title, int index);
-			bool find (std::string &title, int index);
-			bool find (std::string &title);
-			std::vector<int> get (std::string &title);
+		    ~Configuration ();
+			void add (ConfigData &data);
+			bool get (ConfigData &data);
 			void open (std::string &filename);
 			void save ();
 			
-			static Bookmark *m_instance;
-			static Bookmark *instance ();
+			static Configuration *m_instance;
+			static Configuration *instance ();
 			
 		private:
-			Bookmark ();
+			Configuration ();
 			std::string m_filename;
 			bool m_is_opened;
 			Parser *m_parser;

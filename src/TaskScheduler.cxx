@@ -123,7 +123,7 @@ spdf::TaskScheduler::init (int numberOfThread)
 	}
 	
 	m_init = 1;
-	m_size = 4;
+	m_size = 8;
 	
 	for (int i = 0; i < numberOfThread; i++) {
 		RefThreadData thread_data (new ThreadData);

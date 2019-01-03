@@ -13,8 +13,8 @@
  *
  */
 
-#ifndef BOOKMARK_H
-#define BOOKMARK_H
+#ifndef SESSION_H
+#define SESSION_H
 
 #include <string>
 #include <vector>
@@ -24,22 +24,28 @@ namespace spdf {
     struct _parser;
 	typedef struct _parser Parser;
 	
-	class Bookmark {
+	typedef struct {
+		std::string m_upass;
+		std::string m_opass;
+		int m_mode;
+		int m_index;
+		double m_scale;
+	} SessionData;
+	
+	class Session {
 		public:
-		    ~Bookmark ();
-			void add (std::string &title, int index);
-			void erase (std::string &title, int index);
-			bool find (std::string &title, int index);
-			bool find (std::string &title);
-			std::vector<int> get (std::string &title);
+		    ~Session ();
+			void add (std::string &title, SessionData &data);
+			void erase (std::string &title);
+			bool get (std::string &title, SessionData &data);
 			void open (std::string &filename);
 			void save ();
 			
-			static Bookmark *m_instance;
-			static Bookmark *instance ();
+			static Session *m_instance;
+			static Session *instance ();
 			
 		private:
-			Bookmark ();
+			Session ();
 			std::string m_filename;
 			bool m_is_opened;
 			Parser *m_parser;

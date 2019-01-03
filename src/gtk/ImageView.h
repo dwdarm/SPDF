@@ -17,7 +17,7 @@ namespace spdf {
 	
 	typedef struct {
 		std::shared_ptr<unsigned char> m_refImage;
-		std::shared_ptr<unsigned char> m_refImagec;
+		int m_image_id;
 		int m_image_index;
 		int m_image_width;
 		int m_image_height;
@@ -54,20 +54,23 @@ namespace spdf {
 			std::vector<ImageViewRect> get_image_at_region (int x1, int y1, int x2, int y2);
 			std::vector<int> get_image_indexs ();
 			bool last_signal () const;
-			void push_front(unsigned char *d, int i, int w, int h, int r);
-			void push_back (unsigned char *d, int i, int w, int h, int r);
+			int max_size () const;
+			int push_front(unsigned char *d, int i, int w, int h, int r);
+			int push_back (unsigned char *d, int i, int w, int h, int r);
 			void pop_front();
 			void pop_back ();
 			void refresh ();
+			bool runout () const;
+			void inc_max_size ();
 			void scroll_up ();
 			void scroll_down ();
 			void scroll_left ();
 			void scroll_right ();
 			void set (unsigned char *d, int i, int w, int h, int r);
+			void set (unsigned char *d, int id);
 			void set_mode (ImageViewMode mode);
 			
 			sigc::signal<void, bool, int> signal_offset ();
-			sigc::signal<void, int> signal_runout ();
 			sigc::signal<void, int> signal_current ();
 			
 		protected:
@@ -88,9 +91,9 @@ namespace spdf {
 			int m_max_size;
 			bool m_last_signal;
 			bool m_is_edited;
+			int m_id;
 			
 			sigc::signal<void, bool, int> m_signal_offset;
-			sigc::signal<void, int> m_signal_runout;
 			sigc::signal<void, int> m_signal_current;
 			
 			bool on_imageview_scroll_event (GdkEventScroll* scroll_event);
